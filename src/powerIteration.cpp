@@ -48,18 +48,6 @@ Eigen::MatrixXd powerIterationChannel(Eigen::MatrixXd A, int k, int maxIteration
         //v -> the right singular vector
         Eigen::VectorXd v = randomVector(A.cols(), epsilon);
 
-        /*
-        if (idx > 0){
-            for (int j = 0; j < idx; j++){
-                v -= (V.col(j).dot(v)) * V.col(j);
-            }
-            
-            double norm = v.norm();
-            if (norm > epsilon){
-                v /= norm;
-            }
-        }*/
-
         //u -> the left singular vector
         Eigen::VectorXd u;
         for (int iteration = 0; iteration < maxIterations; iteration++){
@@ -79,18 +67,6 @@ Eigen::MatrixXd powerIterationChannel(Eigen::MatrixXd A, int k, int maxIteration
                 break;
             }
             v_new /= vNorm;
-
-            /*
-            if (idx > 0){
-                for (int j = 0; j < idx; j++){
-                    v -= (V.col(j).dot(v_new)) * V.col(j);
-                }
-                
-                double norm = v_new.norm();
-                if (norm > epsilon){
-                    v_new /= norm;
-                }
-            } */
             
             double normDiff = (v_new - v).norm();
             if (normDiff < epsilon){
@@ -104,7 +80,6 @@ Eigen::MatrixXd powerIterationChannel(Eigen::MatrixXd A, int k, int maxIteration
         u = A_copy * v;
         double singularValue = u.norm();
         u /= singularValue;
-        //double singularValue = (A_copy * v).norm();
         std::cout << "singular value = " << singularValue << std::endl;
         
 

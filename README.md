@@ -4,7 +4,7 @@
 
 Power iteration is an iterative algorithm for finding the biggest eigenvalue from a matrix. If the rank of the matrix is deflated at each iteration, then it can be used to approximate all the eigenvalues.
 
-Aditionally, the left and right singular vectors can be approximated too in the process, making matrix reconstruction possible.
+Aditionally, the left and right singular vectors can also be approximated in the process, making matrix reconstruction possible.
 
 #### If only we use the k biggest eigenvalues and singular values,compression of the input is possible.
 
