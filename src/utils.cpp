@@ -51,6 +51,10 @@ void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<un
             g += addPixelNoise(g, mean, stdDev);
             b += addPixelNoise(b, mean, stdDev);
 
+            r = std::max(0, std::min(255, r));
+            g = std::max(0, std::min(255, g));
+            b = std::max(0, std::min(255, b));
+
             newImage.push_back(r);
             newImage.push_back(g);
             newImage.push_back(b);
@@ -68,14 +72,14 @@ void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<un
 void addNoise(std::vector<unsigned char>image, int height, int width){
 
     int mean = 0; //mu
-    std::vector<int> stdDevs = {10, 20, 30};
+    std::vector<int> stdDevs = {2, 10};
     std::string newPath;
     std::vector<unsigned char> newImage;
 
     for (int stdDev : stdDevs){
         newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/noisy_mu{}_std{}.png", mean, stdDev);
-        std::cout << "Noisy image generated and saved to " << newPath << std::endl;
         generateNoisyImage(image, newImage, newPath, height, width, mean, stdDev);
+        std::cout << "Noisy image generated and saved to " << newPath << std::endl;
     }
 }
 
@@ -144,4 +148,166 @@ void reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std
     }
 }
 
+Eigen::VectorXd randomVector(int size, double epsilon){
+    
+    Eigen::VectorXd vector = Eigen::VectorXd(size);
+
+    std::normal_distribution<double> normalDistribution(0, 1);
+    std::mt19937 generator(123456);
+
+    for (int i = 0; i < size; i++){
+        vector(i) = normalDistribution(generator);
+    }
+
+    double norm = vector.norm();
+    if (norm < epsilon){
+        vector = Eigen::VectorXd::Ones(size);
+        return vector;
+    }
+
+    return vector / norm;
+}
+
+void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize){
+
+    for (int i = 0; i < patchSize; i++){
+        for (int j = 0; j < patchSize; j++){
+            weights(rowStart + i, colStart + j) += 1.0;
+        }
+    }
+}
+
+Eigen::MatrixXd averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights){
+
+    assert (A.rows() == weights.rows() && A.cols() == weights.cols());
+
+    for (int i = 0; i < A.rows(); i++){
+        for (int j = 0; j < A.cols(); j++){
+            if (weights(i, j) > 0){
+                A(i, j) /= weights(i, j);
+            }
+        }
+    }
+
+    return A;
+}
+
+
+void reflect(std::vector<std::vector<double>> &paddedVector, int padSize, bool left){
+
+    int startIndex;
+    int stopIndex;
+    if (left){
+        startIndex = 0;
+        stopIndex = padSize;
+    } else {
+        startIndex = paddedVector[0].size() - padSize;
+        stopIndex = paddedVector[0].size();
+    }
+
+    for (int i = 0; i < paddedVector.size(); i++){
+        std::vector<double> &currentVector = paddedVector[i];
+
+        int reflectionIdx = currentVector.size() - 2 * padSize;
+        for (int idx = startIndex; idx < stopIndex; idx++){
+            currentVector[idx] = currentVector[reflectionIdx];
+            reflectionIdx--;
+        }
+    }
+
+}
+
+std::vector<std::vector<double>> buildRowPad(Eigen::MatrixXd A, int padSize, bool top){
+
+    std::vector<std::vector<double>> paddedVector;
+    int startRow;
+    if (top){
+        startRow = padSize;
+    } else {
+        startRow = A.rows() - padSize - 1; // era -2
+    }
+
+    for (int padIdx = 0; padIdx < padSize; padIdx++){
+        std::vector<double> innerPad(A.row(0).size() + 2 * padSize);
+        for (int i = 0; i < A.row(0).size(); i++){
+            innerPad[padSize + i] = A.row(startRow)(i);
+        }
+
+        startRow--;
+        paddedVector.push_back(innerPad);
+    }
+
+    bool left = true;
+    reflect(paddedVector, padSize, left);
+    reflect(paddedVector, padSize, !left);
+    return paddedVector;
+}
+
+std::vector<std::vector<double>> buildColumnPad(Eigen::MatrixXd A, int padSize, bool left){
+
+    std::vector<std::vector<double>> paddedVector;
+    int startCol;
+    if (left){
+        startCol = padSize;
+    } else if (!left){
+        startCol = A.cols() - padSize - 1; // era -2
+    }
+
+    for (int padIdx = 0; padIdx < padSize; padIdx++){
+
+        std::vector<double> innerPad(A.col(0).size());
+        for (int j = 0; j < A.col(0).size(); j++){
+            innerPad[j] = A.col(startCol)(j);
+        }
+
+        startCol--;
+        paddedVector.push_back(innerPad);
+    }
+
+    return paddedVector;
+}
+
+Eigen::MatrixXd padMatrix(Eigen::MatrixXd A, int padSize){
+    
+    // padSize * 2, since the pad is above the first row, and below the last row (and similar for the columns)
+    Eigen::MatrixXd newA = Eigen::MatrixXd::Zero(A.rows() + padSize * 2, A.cols() + padSize * 2);
+    newA.block(padSize, padSize, A.rows(), A.cols()) = A;
+
+    // fill top padding
+    std::vector<std::vector<double>> topPad = buildRowPad(A, padSize, /*top=*/true);
+    for (int row = 0; row < topPad.size(); row++){
+        for (int col = 0; col < newA.cols(); col++){
+            newA(row, col) = topPad[row][col];
+        }
+    }
+
+    // fill bottom padding
+    std::vector<std::vector<double>> bottomPad = buildRowPad(A, padSize, /*top=*/false);
+    for (int row = 0; row < padSize; row++){
+        for (int col = 0; col < newA.cols();col++){
+            newA(newA.rows() - padSize + row, col) = bottomPad[row][col];
+        }
+    }
+    
+    std::vector<std::vector<double>> leftPad = buildColumnPad(A, padSize, /*left=*/true);
+
+    for (int i = 0; i < padSize; i++){
+        std::vector<double> &innerPad = leftPad[i];
+        for (int j = 0; j < innerPad.size(); j++){
+            double element = innerPad[j];
+            newA(padSize + j, i) = innerPad[j];
+        }
+    }  
+
+    std::vector<std::vector<double>> rightPad = buildColumnPad(A, padSize, /*left=*/false);
+    for (int i = 0; i < padSize; i++){
+        std::vector<double> &innerPad = rightPad[i];
+        for (int j = 0; j < innerPad.size(); j++){
+            double element = innerPad[j];
+            newA(padSize + j, newA.cols() - padSize + i) = innerPad[j];
+        }
+    }
+
+    return newA;
+}
 
