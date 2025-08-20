@@ -3,10 +3,30 @@
 #include <Eigen/src/Core/Matrix.h>
 #include <algorithm>
 #include <vector>
-#include <cassert>
+#include <random>
 #include <iostream>
 #include <Eigen/Dense>
 
+
+Eigen::VectorXd randomVector(int size, double epsilon){
+    
+    Eigen::VectorXd vector = Eigen::VectorXd(size);
+
+    std::normal_distribution<double> normalDistribution(0, 1);
+    std::mt19937 generator(123456);
+
+    for (int i = 0; i < size; i++){
+        vector(i) = normalDistribution(generator);
+    }
+
+    double norm = vector.norm();
+    if (norm < epsilon){
+        vector = Eigen::VectorXd::Ones(size);
+        return vector;
+    }
+
+    return vector / norm;
+}
 
 static Eigen::MatrixXd powerIteration(Eigen::MatrixXd A, int k, int maxIterations, double epsilon){
 
@@ -130,57 +150,12 @@ static Eigen::MatrixXd denoiseWithPatches(Eigen::MatrixXd A, int patchSize, int 
     return averagePixels(A_final, weights);
 }
 
-std::vector<Eigen::MatrixXd> denoiseImage(std::vector<Eigen::MatrixXd> channels, int patchSize, int stride, int k, int maxIterations, double epsilon){
+std::vector<Eigen::MatrixXd> pathcesDecomp(std::vector<Eigen::MatrixXd> channels, int patchSize, int stride, int k, int maxIterations, double epsilon){
 
     std::vector<Eigen::MatrixXd> finalMatrices(3);
 
     for (int i = 0; i < finalMatrices.size(); i++){
         Eigen::MatrixXd newChannel = denoiseWithPatches(channels[i], patchSize, stride, k, maxIterations, epsilon);
-        finalMatrices[i] = newChannel;
-    }
-
-    return finalMatrices;
-}
-
-static Eigen::MatrixXd medianFilter(Eigen::MatrixXd A, int windowSize){
-
-    int originalHeight = A.rows();
-    int originalWidth = A.cols();
-
-    int padSize = windowSize / 2;
-
-    Eigen::MatrixXd paddedMatrix = padMatrix(A, padSize);
-    Eigen::MatrixXd A_final = A;
-
-    for (int row = 0; row < A.rows(); row++){
-        for (int col = 0; col < A.cols(); col++){
-            
-            std::cout << "Now at (row, col) = " << row << ", " << col << std::endl;
-            std::vector<double> window;
-            // initialize window
-            for (int i = 0; i < padSize; i++){
-                for (int j = 0; j < padSize; j++){
-                    window.push_back(A_final(row + i, col + j));
-                }
-            }
-
-            std::sort(window.begin(), window.end());
-            double medianValue = window[window.size() / 2];
-
-            A_final(row,col) = medianValue;
-        }
-    }
-
-    return A_final;
-}
-
-std::vector<Eigen::MatrixXd> applyMedianFilter(std::vector<Eigen::MatrixXd> channels, int windowSize){
-
-    std::vector<Eigen::MatrixXd> finalMatrices(3);
-
-    for (int i = 0; i < finalMatrices.size(); i++){
-        std::cout << "Now at index = " << i << std::endl;
-        Eigen::MatrixXd newChannel = medianFilter(channels[i], windowSize);
         finalMatrices[i] = newChannel;
     }
 

@@ -28,10 +28,28 @@ float gaussianGenerator(int mean, int stdDev){
     return mean + stdDev * z0;
 }
 
+void saltPapperNoise(int &r, int &g, int &b, float threshold){
+
+    std::random_device rd;
+    std::mt19937 generator(rd());
+
+    std::uniform_real_distribution<float> uniformDistribution(0.0f, 1.0f);
+
+    double generatedValue = uniformDistribution(generator);
+    double saltOrPepper = uniformDistribution(generator);
+    if (generatedValue < threshold){
+        if (saltOrPepper < 0.5){ // salt
+            r = g = b = 0;
+        } else { //pepper
+            r = g= b = 255; 
+        }
+    }
+}
+
 int addPixelNoise(int originalPixel, int mean, int stdDev){
 
     int noise = (int) gaussianGenerator(mean, stdDev);
-    return (originalPixel + noise) % 256;
+    return (originalPixel + noise) % 255;
 
 }
 
@@ -69,17 +87,46 @@ void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<un
 
 }
 
-void addNoise(std::vector<unsigned char>image, int height, int width){
+void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned char> &newImage, std::string newPath, 
+                        int height, int width, float threshold){
+
+    for (unsigned int col = 0; col < height; col++){
+        for (unsigned int row = 0; row < width; row++){
+
+            int idx = 4 * (col * width + row);
+
+            int r = (int) image[idx];
+            int g = (int) image[idx + 1];
+            int b = (int) image[idx + 2];
+            int a = (int) image[idx + 3];
+
+            saltPapperNoise(r, g, b, threshold);
+
+            newImage.push_back(r);
+            newImage.push_back(g);
+            newImage.push_back(b);
+            newImage.push_back(a);
+        }
+    }    
+
+    int error = lodepng::encode(newPath, newImage, width, height);
+    if (error) {
+        std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
+    }
+
+    std::cout << "Image with salt and pepper noise generated and saved to " << newPath << std::endl;
+}
+
+void addGaussianNoise(std::vector<unsigned char>image, int height, int width, std::vector<int> stdDevs){
 
     int mean = 0; //mu
-    std::vector<int> stdDevs = {2, 10};
     std::string newPath;
     std::vector<unsigned char> newImage;
 
     for (int stdDev : stdDevs){
-        newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/noisy_mu{}_std{}.png", mean, stdDev);
+        newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/noisy/noisy_mu{}_std{}.png", mean, stdDev);
         generateNoisyImage(image, newImage, newPath, height, width, mean, stdDev);
-        std::cout << "Noisy image generated and saved to " << newPath << std::endl;
+        std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << newPath << std::endl;
     }
 }
 
@@ -148,26 +195,6 @@ void reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std
     }
 }
 
-Eigen::VectorXd randomVector(int size, double epsilon){
-    
-    Eigen::VectorXd vector = Eigen::VectorXd(size);
-
-    std::normal_distribution<double> normalDistribution(0, 1);
-    std::mt19937 generator(123456);
-
-    for (int i = 0; i < size; i++){
-        vector(i) = normalDistribution(generator);
-    }
-
-    double norm = vector.norm();
-    if (norm < epsilon){
-        vector = Eigen::VectorXd::Ones(size);
-        return vector;
-    }
-
-    return vector / norm;
-}
-
 void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize){
 
     for (int i = 0; i < patchSize; i++){
@@ -192,122 +219,29 @@ Eigen::MatrixXd averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights){
     return A;
 }
 
+Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize) {
 
-void reflect(std::vector<std::vector<double>> &paddedVector, int padSize, bool left){
+    int rows = A.rows();
+    int cols = A.cols();
 
-    int startIndex;
-    int stopIndex;
-    if (left){
-        startIndex = 0;
-        stopIndex = padSize;
-    } else {
-        startIndex = paddedVector[0].size() - padSize;
-        stopIndex = paddedVector[0].size();
+    int newRows = rows + 2 * padSize;
+    int newCols = cols + 2 * padSize;
+
+    Eigen::MatrixXd A_final(newRows, newCols);
+
+    // center
+    A_final.block(padSize, padSize, rows, cols) = A;
+
+    for (int i = 0; i < padSize; i++) {
+        A_final.row(padSize - 1 - i) = A_final.row(padSize + i);              // reflect top
+        A_final.row(padSize + rows + i) = A_final.row(padSize + rows - 1 - i); // reflect bottom
     }
 
-    for (int i = 0; i < paddedVector.size(); i++){
-        std::vector<double> &currentVector = paddedVector[i];
-
-        int reflectionIdx = currentVector.size() - 2 * padSize;
-        for (int idx = startIndex; idx < stopIndex; idx++){
-            currentVector[idx] = currentVector[reflectionIdx];
-            reflectionIdx--;
-        }
+    for (int i = 0; i < padSize; i++) {
+        A_final.col(padSize - 1 - i) = A_final.col(padSize + i);               // reflect left
+        A_final.col(padSize + cols + i) = A_final.col(padSize + cols - 1 - i); // reflect right
     }
 
-}
-
-std::vector<std::vector<double>> buildRowPad(Eigen::MatrixXd A, int padSize, bool top){
-
-    std::vector<std::vector<double>> paddedVector;
-    int startRow;
-    if (top){
-        startRow = padSize;
-    } else {
-        startRow = A.rows() - padSize - 1; // era -2
-    }
-
-    for (int padIdx = 0; padIdx < padSize; padIdx++){
-        std::vector<double> innerPad(A.row(0).size() + 2 * padSize);
-        for (int i = 0; i < A.row(0).size(); i++){
-            innerPad[padSize + i] = A.row(startRow)(i);
-        }
-
-        startRow--;
-        paddedVector.push_back(innerPad);
-    }
-
-    bool left = true;
-    reflect(paddedVector, padSize, left);
-    reflect(paddedVector, padSize, !left);
-    return paddedVector;
-}
-
-std::vector<std::vector<double>> buildColumnPad(Eigen::MatrixXd A, int padSize, bool left){
-
-    std::vector<std::vector<double>> paddedVector;
-    int startCol;
-    if (left){
-        startCol = padSize;
-    } else if (!left){
-        startCol = A.cols() - padSize - 1; // era -2
-    }
-
-    for (int padIdx = 0; padIdx < padSize; padIdx++){
-
-        std::vector<double> innerPad(A.col(0).size());
-        for (int j = 0; j < A.col(0).size(); j++){
-            innerPad[j] = A.col(startCol)(j);
-        }
-
-        startCol--;
-        paddedVector.push_back(innerPad);
-    }
-
-    return paddedVector;
-}
-
-Eigen::MatrixXd padMatrix(Eigen::MatrixXd A, int padSize){
-    
-    // padSize * 2, since the pad is above the first row, and below the last row (and similar for the columns)
-    Eigen::MatrixXd newA = Eigen::MatrixXd::Zero(A.rows() + padSize * 2, A.cols() + padSize * 2);
-    newA.block(padSize, padSize, A.rows(), A.cols()) = A;
-
-    // fill top padding
-    std::vector<std::vector<double>> topPad = buildRowPad(A, padSize, /*top=*/true);
-    for (int row = 0; row < topPad.size(); row++){
-        for (int col = 0; col < newA.cols(); col++){
-            newA(row, col) = topPad[row][col];
-        }
-    }
-
-    // fill bottom padding
-    std::vector<std::vector<double>> bottomPad = buildRowPad(A, padSize, /*top=*/false);
-    for (int row = 0; row < padSize; row++){
-        for (int col = 0; col < newA.cols();col++){
-            newA(newA.rows() - padSize + row, col) = bottomPad[row][col];
-        }
-    }
-    
-    std::vector<std::vector<double>> leftPad = buildColumnPad(A, padSize, /*left=*/true);
-
-    for (int i = 0; i < padSize; i++){
-        std::vector<double> &innerPad = leftPad[i];
-        for (int j = 0; j < innerPad.size(); j++){
-            double element = innerPad[j];
-            newA(padSize + j, i) = innerPad[j];
-        }
-    }  
-
-    std::vector<std::vector<double>> rightPad = buildColumnPad(A, padSize, /*left=*/false);
-    for (int i = 0; i < padSize; i++){
-        std::vector<double> &innerPad = rightPad[i];
-        for (int j = 0; j < innerPad.size(); j++){
-            double element = innerPad[j];
-            newA(padSize + j, newA.cols() - padSize + i) = innerPad[j];
-        }
-    }
-
-    return newA;
+    return A_final;
 }
 

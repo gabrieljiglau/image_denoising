@@ -5,7 +5,7 @@ set -e   # exit on any command failure
 INCLUDE_PATH="-I/usr/bin/eigen"
 LIBS="-lfmt"
 
-sources=("src/lodepng.cpp" "src/utils.cpp" "src/powerIteration.cpp" "src/main.cpp")
+sources=("src/lodepng.cpp" "src/utils.cpp" "src/powerIteration.cpp" "src/medianFilter.cpp" "src/gaussianBlur.cpp" "src/main.cpp")
 executables=()
 
 for src in "${sources[@]}"; do
