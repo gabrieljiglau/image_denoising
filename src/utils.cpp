@@ -1,5 +1,5 @@
-#include "utils.hpp"
-#include "lodepng.h"
+#include "include/utils.hpp"
+#include "include/lodepng.h"
 #include <Eigen/src/Core/Matrix.h>
 #include <random>
 #include <cmath>
@@ -8,6 +8,11 @@
 #include <vector>
 #include <string>
 #include <Eigen/Dense>
+
+
+/// TODO: clasa pentru adaugatul de zgomot
+/// TODO: apoi clasa pt SVD_AProximator (powerIteration.hpp)
+
 
 float gaussianGenerator(int mean, int stdDev){
 
@@ -28,7 +33,7 @@ float gaussianGenerator(int mean, int stdDev){
     return mean + stdDev * z0;
 }
 
-void saltPapperNoise(int &r, int &g, int &b, float threshold){
+void saltPepperNoise(int &r, int &g, int &b, float threshold){
 
     std::random_device rd;
     std::mt19937 generator(rd());
@@ -41,7 +46,7 @@ void saltPapperNoise(int &r, int &g, int &b, float threshold){
         if (saltOrPepper < 0.5){ // salt
             r = g = b = 0;
         } else { //pepper
-            r = g= b = 255; 
+            r = g = b = 255; 
         }
     }
 }
@@ -100,7 +105,7 @@ void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned c
             int b = (int) image[idx + 2];
             int a = (int) image[idx + 3];
 
-            saltPapperNoise(r, g, b, threshold);
+            saltPepperNoise(r, g, b, threshold);
 
             newImage.push_back(r);
             newImage.push_back(g);

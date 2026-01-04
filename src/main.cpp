@@ -1,28 +1,33 @@
-#include "lodepng.h"
-#include "utils.hpp"
-#include "medianFilter.hpp"
-#include "gaussianBlur.hpp"
-#include "powerIteration.hpp"
+#include "include/lodepng.h"
+#include "include/utils.hpp"
+#include "include/medianFilter.hpp"
+#include "include/gaussianBlur.hpp"
+#include "include/toolkit.hpp"
+#include "include/powerIteration.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Core/util/Constants.h>
 #include <vector>
 #include <string>
+#include <optional>
 #include <iostream>
 #include <fmt/core.h>
 #include <fmt/core.h>
 
-int main(){
 
-    std::vector<unsigned char> image;
+int main(int argc, char *argv[]){
 
-    // out for reconstruction
-    std::vector<unsigned char> newImage;
-    unsigned width; // img_row
-    unsigned height; // img_col
+    if (argc != 3 || argc != 4) {
+        std::cout << "Usage: ./build/image_denoising full/path/to/image mode kForSVD" << std::endl;
+        return 1;
+    }
 
-    
-    std::string carPng = "/home/gabriel/Documents/HolyC/image_denoising/images/denoised/denoised_k50.png";
-    unsigned error = lodepng::decode(image, width, height, carPng);
+    std::string inputPng = argv[1];
+    std::string mode = argv[2];
+    std::optional<std::string> kSVD = argv[3];
+
+    Toolkit toolkit;
+    toolkit.processPng(inputPng, mode, kSVD);
+
     //printImage(image, height, width);
 
     /*
@@ -50,15 +55,14 @@ int main(){
 
 
     // SVD
-    /*
     for (int k : kVals){
         std::vector<Eigen::MatrixXd> finalChannels = approximateImage(channels, k, maxIterations, epsilon);
         std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised/denoised_k{}.png", k);
         reconstructImage(finalChannels, newImage, newPath, height, width);
     }
-    */
-
+    
     // gaussianBlur after SVD
+    /*
     int kernelSize = 3;
     std::vector<int> stdDevs = {2, 5, 10, 20};
     for (int stdDev : stdDevs){
@@ -66,6 +70,7 @@ int main(){
         std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised/denoised_k{}_afterBlur.png", stdDev);
         reconstructImage(blurredChannels, newImage, newPath, height, width);
     }
+    */
 
 
 

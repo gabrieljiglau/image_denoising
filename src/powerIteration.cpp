@@ -1,5 +1,5 @@
-#include "powerIteration.hpp"
-#include "utils.hpp"
+#include "include/powerIteration.hpp"
+#include "include/utils.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <algorithm>
 #include <vector>
