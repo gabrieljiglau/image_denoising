@@ -1,7 +1,14 @@
 #include "include/kernel_methods.hpp"
 #include "include/utils.hpp"
 
-
+/**
+ * @brief Prepares the gaussian kernel to be applied on a given channel
+ *
+ * @param kernelSize  The size of the kernel (usually an odd number)
+ * @param stddev The standard deviation used in gaussian distribution ~ N (0, stddev).
+ * @return The kernel as an Eigen::MatrixXd.
+ *
+ */
 Eigen::MatrixXd GaussianBlur::kernel(int kernelSize, double stddev){
 
     Eigen::MatrixXd kernel(kernelSize, kernelSize);
@@ -20,6 +27,8 @@ Eigen::MatrixXd GaussianBlur::kernel(int kernelSize, double stddev){
     return kernel / sum;
 }
 
+/// @param A: the channel for which the transformation is applied
+/// @return sum of the multiplications between the original pixel and the elements from the kernel
 Eigen::MatrixXd GaussianBlur::blur(Eigen::MatrixXd A, int kernelSize, double stddev){
 
     int padSize = kernelSize / 2;
@@ -44,10 +53,10 @@ Eigen::MatrixXd GaussianBlur::blur(Eigen::MatrixXd A, int kernelSize, double std
     return A_final;
 }
 
-std::vector<Eigen::MatrixXd> GaussianBlur::applyBlur(int kernelSize, double stddev){
+/// Applies the Gaussian Blur on all 3 channels from the image
+std::vector<Eigen::MatrixXd> GaussianBlur::apply(){
     
     std::vector<Eigen::MatrixXd> finalMatrices(3);
-    std::vector<Eigen::MatrixXd> channels = getChannels();
     
     for (int i = 0; i < finalMatrices.size(); i++){
         // std::cout << "Now at index = " << i << std::endl;
@@ -58,6 +67,15 @@ std::vector<Eigen::MatrixXd> GaussianBlur::applyBlur(int kernelSize, double stdd
     return finalMatrices;
 }
 
+
+/**
+ * @brief Prepares the median filter to be applied on a given channel
+ *
+ * @param A The channel for which the transformation is applied
+ * @param windowSize  The size of the kernel (usually an odd number)
+ * @return The filter as an Eigen::MatrixXd.
+ *
+ */
 Eigen::MatrixXd MedianFilter::filter(Eigen::MatrixXd A, int windowSize){
 
     int padSize = windowSize / 2;
@@ -91,7 +109,9 @@ Eigen::MatrixXd MedianFilter::filter(Eigen::MatrixXd A, int windowSize){
     return A_final;
 }
 
-std::vector<Eigen::MatrixXd> MedianFilter::applyFilter(std::vector<Eigen::MatrixXd> channels, int windowSize){
+
+/// Applies the Median Filter on all 3 channels from the image
+std::vector<Eigen::MatrixXd> MedianFilter::apply(){
 
     std::vector<Eigen::MatrixXd> finalMatrices(3);
 

@@ -1,40 +1,21 @@
-#include "include/powerIteration.hpp"
+#include "include/power_iteration.hpp"
 #include "include/utils.hpp"
 #include <Eigen/src/Core/Matrix.h>
-#include <algorithm>
 #include <vector>
-#include <random>
 #include <iostream>
 #include <Eigen/Dense>
 
-
-Eigen::VectorXd randomVector(int size, double epsilon){
-    
-    Eigen::VectorXd vector = Eigen::VectorXd(size);
-
-    std::normal_distribution<double> normalDistribution(0, 1);
-    std::mt19937 generator(123456);
-
-    for (int i = 0; i < size; i++){
-        vector(i) = normalDistribution(generator);
-    }
-
-    double norm = vector.norm();
-    if (norm < epsilon){
-        vector = Eigen::VectorXd::Ones(size);
-        return vector;
-    }
-
-    return vector / norm;
-}
-
-static Eigen::MatrixXd powerIteration(Eigen::MatrixXd A, int k, int maxIterations, double epsilon){
-
-    /*
-    A: input channel matrix (R/G/B)
-    k: k-biggest singular values
-    epsilon: precision for computations
-    */
+/**
+ * @brief Applies the power iteration algorithm with deflation on a given channel
+ *
+ * @param A Input channel from matrix (R/G/B)
+ * @param k Keep only the k-biggest singular values
+ * @param maxIterations Max iterations for the algorithm
+ * @param epsilon Floating point precision for computations
+ * @return The truncated channel as an Eigen::MatrixXd.
+ *
+ */
+Eigen::MatrixXd SVD::powerIteration(Eigen::MatrixXd A, int k, int maxIterations, double epsilon){
 
     Eigen::MatrixXd U = Eigen::MatrixXd::Zero(A.rows(), k);
     Eigen::VectorXd S = Eigen::VectorXd::Zero(k);
@@ -104,7 +85,9 @@ static Eigen::MatrixXd powerIteration(Eigen::MatrixXd A, int k, int maxIteration
     return A_final;
 }
 
-std::vector<Eigen::MatrixXd> approximateImage(std::vector<Eigen::MatrixXd> channels, int k, int maxIterations, double epsilon){
+
+/// Applies the powerIteration on all 3 channels from the image
+std::vector<Eigen::MatrixXd> SVD::apply(){
 
     std::vector<Eigen::MatrixXd> finalMatrices(3);
 
@@ -116,7 +99,20 @@ std::vector<Eigen::MatrixXd> approximateImage(std::vector<Eigen::MatrixXd> chann
     return finalMatrices;
 }
 
-static Eigen::MatrixXd denoiseWithPatches(Eigen::MatrixXd A, int patchSize, int stride, int k, int maxIterations, double epsilon){
+
+/**
+ * @brief Applies the SVD decomposition on smaller submatrices from a given channel
+ *
+ * @param A Input channel from matrix (R/G/B)
+ * @param patchSize The dimensions of the smaller submatrices (patchSize X patchSize)
+ * @param stride The step size then traversing the channel
+ * @param k Keep only the k-biggest singular values
+ * @param maxIterations Max iterations for the algorithm
+ * @param epsilon Floating point precision for computations
+ * @return The truncated channel as an Eigen::MatrixXd.
+ *
+ */
+Eigen::MatrixXd SVD::applyPatches(Eigen::MatrixXd A, int patchSize, int stride, int k, int maxIterations, double epsilon){
 
     Eigen::MatrixXd A_final = Eigen::MatrixXd::Zero(A.rows(), A.cols());
     Eigen::MatrixXd weights = Eigen::MatrixXd::Zero(A.rows(), A.cols());
@@ -150,12 +146,15 @@ static Eigen::MatrixXd denoiseWithPatches(Eigen::MatrixXd A, int patchSize, int 
     return averagePixels(A_final, weights);
 }
 
-std::vector<Eigen::MatrixXd> pathcesDecomp(std::vector<Eigen::MatrixXd> channels, int patchSize, int stride, int k, int maxIterations, double epsilon){
+
+
+/// Applies the patch SVD on all 3 channels from the image
+std::vector<Eigen::MatrixXd> SVD::apply(int patchSize, int stride){
 
     std::vector<Eigen::MatrixXd> finalMatrices(3);
 
     for (int i = 0; i < finalMatrices.size(); i++){
-        Eigen::MatrixXd newChannel = denoiseWithPatches(channels[i], patchSize, stride, k, maxIterations, epsilon);
+        Eigen::MatrixXd newChannel = applyPatches(channels[i], patchSize, stride, k, maxIterations, epsilon);
         finalMatrices[i] = newChannel;
     }
 

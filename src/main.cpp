@@ -9,7 +9,7 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <iostream>
+#include <stdio.h>
 #include <fmt/core.h>
 #include <fmt/core.h>
 
@@ -17,7 +17,7 @@
 int main(int argc, char *argv[]){
 
     if (argc != 3 || argc != 4) {
-        std::cout << "Usage: ./build/image_denoising full/path/to/image mode kForSVD" << std::endl;
+        printf("Usage: ./build/image_denoising full/path/to/image mode kForSVD \n");
         return 1;
     }
 

@@ -1,5 +1,5 @@
 #include "include/utils.hpp"
-#include "include/lodepng.h"
+#include "libs/lodepng.h"
 #include <Eigen/src/Core/Matrix.h>
 #include <random>
 #include <cmath>
@@ -13,6 +13,25 @@
 /// TODO: clasa pentru adaugatul de zgomot
 /// TODO: apoi clasa pt SVD_AProximator (powerIteration.hpp)
 
+Eigen::VectorXd randomVector(int size, double epsilon){
+    
+    Eigen::VectorXd vector = Eigen::VectorXd(size);
+
+    std::normal_distribution<double> normalDistribution(0, 1);
+    std::mt19937 generator(123456);
+
+    for (int i = 0; i < size; i++){
+        vector(i) = normalDistribution(generator);
+    }
+
+    double norm = vector.norm();
+    if (norm < epsilon){
+        vector = Eigen::VectorXd::Ones(size);
+        return vector;
+    }
+
+    return vector / norm;
+}
 
 float gaussianGenerator(int mean, int stdDev){
 
@@ -156,48 +175,6 @@ std::vector<Eigen::MatrixXd> rgbChannel(std::vector<unsigned char> image, int he
     }
     
     return returnVector;
-}
-
-void reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std::vector<unsigned char> &newImage,
-    std::string newPath, unsigned height, unsigned width){
-    
-    std::vector<Eigen::RowVectorXd> rowVectors;
-
-    for (Eigen::MatrixXd channel: truncatedChannels){
-        Eigen::RowVectorXd innerVector(channel.size());
-
-        // Eigen stores matrices in column-major order
-        int idx = 0; 
-        for (int row = 0; row < channel.rows(); row++){
-            for (int col = 0; col < channel.cols(); col++){
-                innerVector(idx++) = channel(row, col); 
-            }
-        }
-        rowVectors.push_back(innerVector);
-    }
-
-    int size = rowVectors[0].size();
-    for (int i = 0; i < size; i++){
-
-        int r = (int) rowVectors[0](i);
-        int g = (int) rowVectors[1](i);
-        int b = (int) rowVectors[2](i);
-        int a = 255; // I already know a is 255 (the image isn't transparent)
-
-        r = std::max(0, std::min(255, r));
-        g = std::max(0, std::min(255, g));
-        b = std::max(0, std::min(255, b));
-
-        newImage.push_back(r);
-        newImage.push_back(g);
-        newImage.push_back(b);
-        newImage.push_back(a);
-    }
-
-    int error = lodepng::encode(newPath, newImage, width, height);
-    if (error) {
-        std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
-    }
 }
 
 void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize){

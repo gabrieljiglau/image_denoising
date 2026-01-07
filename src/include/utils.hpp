@@ -21,3 +21,5 @@ void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int p
 Eigen::MatrixXd averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights);
 
 Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize);
+
+Eigen::VectorXd randomVector(int size, double epsilon);
