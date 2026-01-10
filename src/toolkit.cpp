@@ -1,6 +1,7 @@
 #include "include/toolkit.hpp"
 #include "include/base.hpp"
 #include "include/kernel_methods.hpp"
+#include "include/power_iteration.hpp"
 #include "libs/lodepng.h"
 #include <iostream>
 
@@ -14,6 +15,32 @@ int Toolkit::loadPng(std::string pngPath){
     unsigned error = lodepng::decode(image, width, height, pngPath);
     return error;
 }
+
+
+std::vector<Eigen::MatrixXd> Toolkit::rgbChannel(){
+
+    std::vector<std::vector<int>> channelMatrices(3);
+    std::vector<Eigen::MatrixXd> returnVector(3);
+
+    for (unsigned int col = 0; col < height; col++){ // height        
+        for (unsigned int row = 0; row < width; row++){ //width
+            int idx = 4 * (col * width + row);
+            channelMatrices[0].push_back(image[idx]);
+            channelMatrices[1].push_back(image[idx + 1]);
+            channelMatrices[2].push_back(image[idx + 2]);
+        }
+    }
+
+    for (int i = 0; i < returnVector.size(); i++){
+        std::vector<int> channel = channelMatrices[i];
+        Eigen::Map<Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> mappedMatrix(channel.data(), height, width);
+        returnVector[i] = mappedMatrix.cast<double>();
+    }
+    
+    return returnVector;
+}
+
+
 
 /**
  * @brief Reconstructs an image (all 3 channels) and saves it to the given path
@@ -68,21 +95,36 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
     return 0;
 }
 
-int Toolkit::processPng(std::string inputPng){
+/**
+ * @brief Applies the transformation based on the given 'mode' and saves the reconstructed image to 𝘯𝘦𝘸𝘗𝘢𝘵𝘩
+ *
+ */
+int Toolkit::processPng(std::string inputPng, std::string newPath){
 
     IAlgorithm algorithm;
+    std::vector<Eigen::MatrixXd> truncatedChannels;
 
     if (mode == "blur"){
         algorithm = GaussianBlur(channels, kernelSize, stddev);
     } else if (mode == "filter"){
-        // median filter
+        algorithm = MedianFilter(channels, windowSize);
     } else if (mode == "svd"){
-        // svd
+        algorithm = SVD(channels, k, maxIterations, epsilon);
     } else if (mode == "patch_svd"){
-        // patch svd
+        SVD patchSVD = SVD(channels, k ,maxIterations, epsilon);
+        truncatedChannels = patchSVD.apply(patchSize, stride);
     }
 
-    algorithm.apply();
-    // reconstruct image;
-    //save
+    if (truncatedChannels.empty()){ // it wasn't patch svd
+        truncatedChannels = algorithm.apply();
+    }
+    
+    std::vector<unsigned char> newImage;
+    int errCode = reconstructImage(truncatedChannels, newImage, newPath);
+    
+    if (errCode != 0){
+        return errCode;
+    }
+
+    return 0;
 }

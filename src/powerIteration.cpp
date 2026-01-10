@@ -99,6 +99,30 @@ std::vector<Eigen::MatrixXd> SVD::apply(){
     return finalMatrices;
 }
 
+void SVD::cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize){
+
+    for (int i = 0; i < patchSize; i++){
+        for (int j = 0; j < patchSize; j++){
+            weights(rowStart + i, colStart + j) += 1.0;
+        }
+    }
+}
+
+Eigen::MatrixXd SVD::averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights){
+
+    assert (A.rows() == weights.rows() && A.cols() == weights.cols());
+
+    for (int i = 0; i < A.rows(); i++){
+        for (int j = 0; j < A.cols(); j++){
+            if (weights(i, j) > 0){
+                A(i, j) /= weights(i, j);
+            }
+        }
+    }
+
+    return A;
+}
+
 
 /**
  * @brief Applies the SVD decomposition on smaller submatrices from a given channel

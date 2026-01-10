@@ -1,14 +1,12 @@
-#include "include/lodepng.h"
+#include "libs/lodepng.h"
 #include "include/utils.hpp"
-#include "include/medianFilter.hpp"
-#include "include/gaussianBlur.hpp"
+#include "include/kernel_methods.hpp"
 #include "include/toolkit.hpp"
-#include "include/powerIteration.hpp"
+#include "include/power_iteration.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Core/util/Constants.h>
 #include <vector>
 #include <string>
-#include <optional>
 #include <stdio.h>
 #include <fmt/core.h>
 #include <fmt/core.h>
@@ -16,19 +14,20 @@
 
 int main(int argc, char *argv[]){
 
-    if (argc != 3 || argc != 4) {
-        printf("Usage: ./build/image_denoising full/path/to/image mode kForSVD \n");
-        return 1;
-    }
+    /// TODO: run the program with flags
 
     std::string inputPng = argv[1];
     std::string mode = argv[2];
-    std::optional<std::string> kSVD = argv[3];
+
+    if (arc)
+    std::string kSVD = argv[3];
 
     Toolkit toolkit;
     toolkit.processPng(inputPng, mode, kSVD);
 
     //printImage(image, height, width);
+
+    /// TODO: functia asta sa primeasca ca parametru locul de salvare al imaginii
 
     /*
     std::vector<int> stdDevs = {10};
@@ -47,6 +46,7 @@ int main(int argc, char *argv[]){
     */  
     
     
+    // aceasta procesare va fi facuta intern in Toolkit
     std::vector<Eigen::MatrixXd> channels = rgbChannel(image, height, width);
 
     std::vector<int> kVals = {50};

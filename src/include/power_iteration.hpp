@@ -1,5 +1,6 @@
 #pragma once
 #include "base.hpp"
+#include <vector>
 
 class SVD: public IAlgorithm{
 
@@ -16,6 +17,10 @@ class SVD: public IAlgorithm{
 
         Eigen::MatrixXd powerIteration(Eigen::MatrixXd A, int k, int maxIterations, double epsilon);
         Eigen::MatrixXd applyPatches(Eigen::MatrixXd A, int patchSize, int stride, int k, int maxIterations, double epsilon);
+
+        void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize);
+        Eigen::MatrixXd  averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights);
+
 
     public:
 

@@ -10,9 +10,6 @@
 #include <Eigen/Dense>
 
 
-/// TODO: clasa pentru adaugatul de zgomot
-/// TODO: apoi clasa pt SVD_AProximator (powerIteration.hpp)
-
 Eigen::VectorXd randomVector(int size, double epsilon){
     
     Eigen::VectorXd vector = Eigen::VectorXd(size);
@@ -141,6 +138,8 @@ void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned c
     std::cout << "Image with salt and pepper noise generated and saved to " << newPath << std::endl;
 }
 
+
+/// TODO: functia asta sa primeasca ca parametru locul de salvare al imaginii
 void addGaussianNoise(std::vector<unsigned char>image, int height, int width, std::vector<int> stdDevs){
 
     int mean = 0; //mu
@@ -152,53 +151,6 @@ void addGaussianNoise(std::vector<unsigned char>image, int height, int width, st
         generateNoisyImage(image, newImage, newPath, height, width, mean, stdDev);
         std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << newPath << std::endl;
     }
-}
-
-std::vector<Eigen::MatrixXd> rgbChannel(std::vector<unsigned char> image, int height, int width){
-
-    std::vector<std::vector<int>> channelMatrices(3);
-    std::vector<Eigen::MatrixXd> returnVector(3);
-
-    for (unsigned int col = 0; col < height; col++){ // height        
-        for (unsigned int row = 0; row < width; row++){ //width
-            int idx = 4 * (col * width + row);
-            channelMatrices[0].push_back(image[idx]);
-            channelMatrices[1].push_back(image[idx + 1]);
-            channelMatrices[2].push_back(image[idx + 2]);
-        }
-    }
-
-    for (int i = 0; i < returnVector.size(); i++){
-        std::vector<int> channel = channelMatrices[i];
-        Eigen::Map<Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> mappedMatrix(channel.data(), height, width);
-        returnVector[i] = mappedMatrix.cast<double>();
-    }
-    
-    return returnVector;
-}
-
-void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize){
-
-    for (int i = 0; i < patchSize; i++){
-        for (int j = 0; j < patchSize; j++){
-            weights(rowStart + i, colStart + j) += 1.0;
-        }
-    }
-}
-
-Eigen::MatrixXd averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights){
-
-    assert (A.rows() == weights.rows() && A.cols() == weights.cols());
-
-    for (int i = 0; i < A.rows(); i++){
-        for (int j = 0; j < A.cols(); j++){
-            if (weights(i, j) > 0){
-                A(i, j) /= weights(i, j);
-            }
-        }
-    }
-
-    return A;
 }
 
 Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize) {
@@ -226,4 +178,3 @@ Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize) {
 
     return A_final;
 }
-

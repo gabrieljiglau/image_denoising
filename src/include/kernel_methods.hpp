@@ -9,7 +9,9 @@ class GaussianBlur: public IAlgorithm{
         std::vector<Eigen::MatrixXd> channels;
         int kernelSize;
         double stddev;
+
         static Eigen::MatrixXd kernel(int kernelSize, double stddev);
+
         static Eigen::MatrixXd blur(Eigen::MatrixXd A, int kernelSize, double stddev);
 
     public:
@@ -27,6 +29,7 @@ class MedianFilter: public IAlgorithm{
 
         std::vector<Eigen::MatrixXd> channels;
         int windowSize;
+        
         static Eigen::MatrixXd filter(Eigen::MatrixXd A, int windowSize);
 
     public:
