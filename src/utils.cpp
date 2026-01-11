@@ -75,7 +75,7 @@ int addPixelNoise(int originalPixel, int mean, int stdDev){
 }
 
 void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<unsigned char> &newImage, 
-    std::string newPath, int height, int width, int mean, int stdDev){
+                        std::string newPath, int height, int width, int mean, int stdDev){
 
     for (unsigned int col = 0; col < height; col++){
         for (unsigned int row = 0; row < width; row++){
@@ -108,7 +108,7 @@ void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<un
 
 }
 
-void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned char> &newImage, std::string newPath, 
+void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned char> &newImage, std::string savingPath, 
                         int height, int width, float threshold){
 
     for (unsigned int col = 0; col < height; col++){
@@ -130,24 +130,23 @@ void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned c
         }
     }    
 
-    int error = lodepng::encode(newPath, newImage, width, height);
+    int error = lodepng::encode(savingPath, newImage, width, height);
     if (error) {
         std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
     }
 
-    std::cout << "Image with salt and pepper noise generated and saved to " << newPath << std::endl;
+    std::cout << "Image with noise (salt and pepper) generated and saved to " << savingPath << std::endl;
 }
 
 
-/// TODO: functia asta sa primeasca ca parametru locul de salvare al imaginii
-void addGaussianNoise(std::vector<unsigned char>image, int height, int width, std::vector<int> stdDevs){
+void addGaussianNoise(std::vector<unsigned char>image, int height, int width, std::vector<int> stdDevs, std::string savingPath){
 
     int mean = 0; //mu
     std::string newPath;
     std::vector<unsigned char> newImage;
 
     for (int stdDev : stdDevs){
-        newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/noisy/noisy_mu{}_std{}.png", mean, stdDev);
+        newPath = fmt::format(savingPath + "/noisy/noisy_mu{}_std{}.png", mean, stdDev);
         generateNoisyImage(image, newImage, newPath, height, width, mean, stdDev);
         std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << newPath << std::endl;
     }

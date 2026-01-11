@@ -24,7 +24,7 @@ class Toolkit{
         int windowSize;
 
         // for svd
-        int k;
+        std::vector<int> k;
         int maxIterations;
         double epsilon;
 
@@ -37,8 +37,8 @@ class Toolkit{
 
     public:
 
-        Toolkit(std::vector<unsigned char> image, std::string mode, int k, int width = 0, int height = 0):
-            image(image), mode(mode), k(k), width(width), height(height) {};
+        Toolkit(std::string imagePath, std::string mode, int width = 0, int height = 0):
+            image(loadPng(imagePath)), mode(mode), width(width), height(height) {};
 
         int loadPng(std::string pngPath);
 
@@ -53,7 +53,9 @@ class Toolkit{
 
         void setWindowSize(int windowSize) {this->windowSize = windowSize;}
 
-        void setK(int k) {this->k = k;}
+        void setK(std::vector<int> k) {this->k = k;}
+        void setMaxIterations(int maxIterations) {this->maxIterations = maxIterations;}
+        void setEpsilon(double epsilon) {this->epsilon = epsilon;}
 
         void setPatchSize(int patchSize) {this->patchSize = patchSize;}
         void setStride(int stride) {this->stride = stride;}

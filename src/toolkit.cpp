@@ -8,7 +8,6 @@
 
 int Toolkit::loadPng(std::string pngPath){
 
-    std::vector<unsigned char> newImage; // out image for reconstruction
     unsigned width; // img_row
     unsigned height; // img_col
 
