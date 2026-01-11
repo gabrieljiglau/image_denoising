@@ -54,7 +54,7 @@ Eigen::MatrixXd GaussianBlur::blur(Eigen::MatrixXd A, int kernelSize, double std
 }
 
 /// Applies the Gaussian Blur on all 3 channels from the image
-std::vector<Eigen::MatrixXd> GaussianBlur::apply(){
+std::vector<std::vector<Eigen::MatrixXd>>  GaussianBlur::apply(){
     
     std::vector<Eigen::MatrixXd> finalMatrices(3);
     
@@ -64,7 +64,7 @@ std::vector<Eigen::MatrixXd> GaussianBlur::apply(){
         finalMatrices[i] = newChannel;
     }
 
-    return finalMatrices;
+    return std::vector<std::vector<Eigen::MatrixXd>> {finalMatrices};
 }
 
 
@@ -111,7 +111,7 @@ Eigen::MatrixXd MedianFilter::filter(Eigen::MatrixXd A, int windowSize){
 
 
 /// Applies the Median Filter on all 3 channels from the image
-std::vector<Eigen::MatrixXd> MedianFilter::apply(){
+std::vector<std::vector<Eigen::MatrixXd>>  MedianFilter::apply(){
 
     std::vector<Eigen::MatrixXd> finalMatrices(3);
 
@@ -121,5 +121,5 @@ std::vector<Eigen::MatrixXd> MedianFilter::apply(){
         finalMatrices[i] = newChannel;
     }
 
-    return finalMatrices;
+    return std::vector<std::vector<Eigen::MatrixXd>> {finalMatrices};
 }

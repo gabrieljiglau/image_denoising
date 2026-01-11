@@ -19,7 +19,7 @@ class GaussianBlur: public IAlgorithm{
         GaussianBlur(std::vector<Eigen::MatrixXd> channels, int kernelSize, double stddev): 
                     channels(channels), kernelSize(kernelSize), stddev(stddev){}
 
-        std::vector<Eigen::MatrixXd> apply() override;
+        std::vector<std::vector<Eigen::MatrixXd>> apply() override;
 
 };
 
@@ -36,6 +36,6 @@ class MedianFilter: public IAlgorithm{
 
         MedianFilter(std::vector<Eigen::MatrixXd> channels, int windowSize): channels(channels), windowSize(windowSize){}
 
-        std::vector<Eigen::MatrixXd> apply() override;
+        std::vector<std::vector<Eigen::MatrixXd>>  apply() override;
 
 };

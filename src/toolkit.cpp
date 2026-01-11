@@ -98,19 +98,20 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
  * @brief Applies the transformation based on the given 'mode' and saves the reconstructed image to 𝘯𝘦𝘸𝘗𝘢𝘵𝘩
  *
  */
-int Toolkit::processPng(std::string inputPng, std::string newPath){
+std::vector<int> Toolkit::processPng(std::string inputPng, std::string newPath){
 
     IAlgorithm algorithm;
-    std::vector<Eigen::MatrixXd> truncatedChannels;
+    std::vector<int> errCodes;
+    std::vector<std::vector<Eigen::MatrixXd>> truncatedChannels;
 
     if (mode == "blur"){
         algorithm = GaussianBlur(channels, kernelSize, stddev);
     } else if (mode == "filter"){
         algorithm = MedianFilter(channels, windowSize);
     } else if (mode == "svd"){
-        algorithm = SVD(channels, k, maxIterations, epsilon);
+        algorithm = SVD(channels, kVals, maxIterations, epsilon);
     } else if (mode == "patch_svd"){
-        SVD patchSVD = SVD(channels, k ,maxIterations, epsilon);
+        SVD patchSVD = SVD(channels, kVals ,maxIterations, epsilon);
         truncatedChannels = patchSVD.apply(patchSize, stride);
     }
 
@@ -119,11 +120,9 @@ int Toolkit::processPng(std::string inputPng, std::string newPath){
     }
     
     std::vector<unsigned char> newImage;
-    int errCode = reconstructImage(truncatedChannels, newImage, newPath);
-    
-    if (errCode != 0){
-        return errCode;
+    for (auto channel : truncatedChannels){
+        errCodes.push_back(reconstructImage(channel, newImage, newPath));
     }
-
-    return 0;
+    
+    return errCodes;
 }

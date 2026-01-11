@@ -87,13 +87,17 @@ Eigen::MatrixXd SVD::powerIteration(Eigen::MatrixXd A, int k, int maxIterations,
 
 
 /// Applies the powerIteration on all 3 channels from the image
-std::vector<Eigen::MatrixXd> SVD::apply(){
+std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(){
 
-    std::vector<Eigen::MatrixXd> finalMatrices(3);
+    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3);
 
-    for (int i = 0; i < finalMatrices.size(); i++){
-        Eigen::MatrixXd newChannel = powerIteration(channels[i], k, maxIterations, epsilon);
-        finalMatrices[i] = newChannel;
+    for (int i = 0; i < kVals.size(); i++){
+        std::vector<Eigen::MatrixXd> currentReconstruction(3);
+        for (int j = 0; i < finalMatrices.size(); j++){
+            Eigen::MatrixXd newChannel = powerIteration(channels[i], kVals[j], maxIterations, epsilon);
+            currentReconstruction[j] = newChannel;
+        }
+        finalMatrices[i] = currentReconstruction;
     }
 
     return finalMatrices;
@@ -171,18 +175,21 @@ Eigen::MatrixXd SVD::applyPatches(Eigen::MatrixXd A, int patchSize, int stride, 
 }
 
 
-
 /// Applies the patch SVD on all 3 channels from the image
-std::vector<Eigen::MatrixXd> SVD::apply(int patchSize, int stride){
+std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(int patchSize, int stride){
 
-    std::vector<Eigen::MatrixXd> finalMatrices(3);
+    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3);
 
-    for (int i = 0; i < finalMatrices.size(); i++){
-        Eigen::MatrixXd newChannel = applyPatches(channels[i], patchSize, stride, k, maxIterations, epsilon);
-        finalMatrices[i] = newChannel;
+    for (int i = 0; i < kVals.size(); i++){
+        std::vector<Eigen::MatrixXd> currentReconstruction(3);
+        for (int j = 0; i < finalMatrices.size(); j++){
+            Eigen::MatrixXd newChannel = applyPatches(channels[i], patchSize, stride, kVals[i], maxIterations, epsilon);
+            currentReconstruction[j] = newChannel;
+        }
+        finalMatrices[i] = currentReconstruction;
     }
 
-    return finalMatrices;
+    return  finalMatrices;
 }
 
 

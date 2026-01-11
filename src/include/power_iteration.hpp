@@ -8,7 +8,7 @@ class SVD: public IAlgorithm{
 
         std::vector<Eigen::MatrixXd> channels;
 
-        int k;
+        std::vector<int> kVals;
         int maxIterations;
         double epsilon;
 
@@ -24,14 +24,14 @@ class SVD: public IAlgorithm{
 
     public:
 
-        SVD(std::vector<Eigen::MatrixXd> channels, int k, int maxIterations, double epsilon):
+        SVD(std::vector<Eigen::MatrixXd> channels, std::vector<int> kVals, int maxIterations, double epsilon):
             channels(channels),
-            k(k), 
+            kVals(kVals), 
             maxIterations(maxIterations), 
             epsilon(epsilon) {}
 
-        virtual std::vector<Eigen::MatrixXd> apply() override;
+        virtual std::vector<std::vector<Eigen::MatrixXd>> apply() override;
 
-        std::vector<Eigen::MatrixXd> apply(int patchSize, int stride);
+        std::vector<std::vector<Eigen::MatrixXd>> apply(int patchSize, int stride);
 
 };

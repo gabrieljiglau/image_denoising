@@ -24,10 +24,11 @@ class Toolkit{
         int windowSize;
 
         // for svd
-        std::vector<int> k;
+        std::vector<int> kVals;
         int maxIterations;
         double epsilon;
 
+        // extra parametes for patch_svd
         int patchSize;
         int stride;
 
@@ -42,7 +43,7 @@ class Toolkit{
 
         int loadPng(std::string pngPath);
 
-        int processPng(std::string inputPng, std::string newPath);
+        std::vector<int> processPng(std::string inputPng, std::string newPath);
 
         int reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std::vector<unsigned char> &newImage, std::string newPath);
 
@@ -53,7 +54,7 @@ class Toolkit{
 
         void setWindowSize(int windowSize) {this->windowSize = windowSize;}
 
-        void setK(std::vector<int> k) {this->k = k;}
+        void setK(std::vector<int> kVals) {this->kVals = kVals;}
         void setMaxIterations(int maxIterations) {this->maxIterations = maxIterations;}
         void setEpsilon(double epsilon) {this->epsilon = epsilon;}
 

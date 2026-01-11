@@ -6,6 +6,6 @@ class IAlgorithm{
 
     public: 
         
-        virtual std::vector<Eigen::MatrixXd> apply();
+        virtual std::vector<std::vector<Eigen::MatrixXd>> apply();
         virtual ~IAlgorithm() = default;
 };

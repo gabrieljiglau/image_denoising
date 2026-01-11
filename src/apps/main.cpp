@@ -1,16 +1,10 @@
-#include "../libs/lodepng.h"
 #include "../libs/CLI11.hpp"
-#include "../include/utils.hpp"
-#include "../include/kernel_methods.hpp"
 #include "../include/toolkit.hpp"
-#include "../include/power_iteration.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Core/util/Constants.h>
-#include <tuple>
 #include <vector>
 #include <string>
 #include <iostream>
-#include <stdio.h>
 #include <fmt/core.h>
 #include <fmt/core.h>
 
@@ -20,11 +14,16 @@ int main(int argc, char *argv[]){
     CLI::App app{"Image denoising tool"};
 
     std::string inputPng;
+    std::string outputPng;
     std::string mode;
+
     
-    app.add_option("-i, --input", inputPng, "Input image path")
+    app.add_option("-i, --input", inputPng, "Input image path (png format)")
         ->required();
-    app.add_option("--m, --mode", mode, "What algorithm to run");
+    app.add_option("--o, --output", outputPng, "Output path (png format)")
+        ->required();
+    app.add_option("--m, --mode", mode, "What algorithm to run")
+        ->required();
     
     // Gaussian Blur mode
     int kernelSize;
@@ -48,12 +47,12 @@ int main(int argc, char *argv[]){
 
     
     // SVD mode
-    std::vector<int> k;
-    int maxIterations;
-    double epsilon;
+    std::vector<int> kVals;
+    int maxIterations; // 10000
+    double epsilon; // 1e-10
 
     auto *svd = app.add_subcommand("svd", "Singular Value Decomposition");
-    svd->add_option("--k", k, "Keep only the k-biggest singular values")
+    svd->add_option("--k", kVals, "Keep only the k-biggest singular values")
         ->required()
         ->check(CLI::PositiveNumber);
     svd->add_option("--maxIterations", maxIterations, "Maximum Iterations")
@@ -66,8 +65,10 @@ int main(int argc, char *argv[]){
     int patchSize;
     int stride;
 
+    /// TODO: cand folosesti SVD cu mai multe k-uri, sa ai tot atatea output-uri
+
     auto *patchSvd = app.add_subcommand("patch_svd", "Singular Value Decomposition with patches");
-    patchSvd->add_option("--k", k, "Keep only the k-biggest singular values")
+    patchSvd->add_option("--k", kVals, "Keep only the k-biggest singular values")
         ->required()
         ->check(CLI::PositiveNumber);
     patchSvd->add_option("--maxIterations", maxIterations, "Maximum Iterations")
@@ -96,7 +97,6 @@ int main(int argc, char *argv[]){
         std::cout << "Applying Median Filter \n" << std::endl;
     
     } else if(*svd || *patchSvd){
-        toolkit.setK(k);
         toolkit.setMaxIterations(maxIterations);
         toolkit.setEpsilon(epsilon);
         
@@ -110,9 +110,22 @@ int main(int argc, char *argv[]){
         }
     }
 
-    toolkit.processPng(inputPng, mode);
+    std::vector<int> errCodes;
+    if (!*svd || *patchSvd){
+        errCodes = toolkit.processPng(inputPng, outputPng);   
+    } else {
+        toolkit.setK(kVals);
+        errCodes = toolkit.processPng(inputPng, outputPng);
+    }
 
-    /// TODO: SVD-ul sa accepte ca parametru un vector de k-uri, e scump de facut svd de la 0
+    for (int errCode : errCodes){
+        if (errCode != 0) {
+            std::cout << "Encountered error code : " << errCode << " when processing the image with lodepng" << std::endl;
+        }
+    }
+
+    return 0;
+
     /// TODO: apoi rezolvat cmake-ul
 
     /*
@@ -131,21 +144,6 @@ int main(int argc, char *argv[]){
     reconstructImage(medianChannels, newImage, newPath, height, width);
     */  
     
-    
-    // aceasta procesare va fi facuta intern in Toolkit
-    std::vector<Eigen::MatrixXd> channels = rgbChannel(image, height, width);
-
-    std::vector<int> kVals = {50};
-    int maxIterations = 10000;
-    double epsilon = 1e-10;
-
-
-    // SVD
-    for (int k : kVals){
-        std::vector<Eigen::MatrixXd> finalChannels = approximateImage(channels, k, maxIterations, epsilon);
-        std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised/denoised_k{}.png", k);
-        reconstructImage(finalChannels, newImage, newPath, height, width);
-    }
     
     // gaussianBlur after SVD
     /*
@@ -179,15 +177,4 @@ int main(int argc, char *argv[]){
     reconstructImage(finalChannels, newImage, newPath, height, width);
     */
 
-
-    // compression (SVD on the original image)
-    /*
-    for (int k : kVals){
-        std::vector<Eigen::MatrixXd> finalChannels = approximateImage(channels, k, maxIterations, epsilon);
-        std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/compressed_k{}.png", k);
-        reconstructImage(finalChannels, newImage, newPath, height, width);
-    }
-    */
-
-    return 0;
 }
