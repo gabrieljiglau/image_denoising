@@ -32,22 +32,25 @@ class Toolkit{
         int patchSize;
         int stride;
 
-        IAlgorithm algorithm;
+        IAlgorithm *algorithm;
 
         std::vector<Eigen::MatrixXd> rgbChannel();
 
     public:
 
-        Toolkit(std::string imagePath, std::string mode, int width = 0, int height = 0):
-            image(loadPng(imagePath)), mode(mode), width(width), height(height) {};
+        Toolkit(std::string imagePath, std::string mode, int width = 0, int height = 0): mode(mode), width(width), height(height) {    
+            loadPng(imagePath);     // fills internally this->image
+            this->channels = rgbChannel();  // transform the image into Eigen::MatrixXd 
+        };
+                
 
         int loadPng(std::string pngPath);
-
-        std::vector<int> processPng(std::string inputPng, std::string newPath);
 
         int reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std::vector<unsigned char> &newImage, std::string newPath);
 
         //std::vector<Eigen::MatrixXd> getChannels() {return this->channels;}
+
+        void checkRank();
 
         void setKernelSize(int kernelSize) {this->kernelSize = kernelSize;}
         void setStddev(double stddev) {this->stddev = stddev;}
@@ -60,5 +63,7 @@ class Toolkit{
 
         void setPatchSize(int patchSize) {this->patchSize = patchSize;}
         void setStride(int stride) {this->stride = stride;}
+
+        std::vector<int> processPng(std::string inputPng, std::string newPath);
 
 };

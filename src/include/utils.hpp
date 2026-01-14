@@ -14,3 +14,9 @@ void printImage(std::vector<unsigned char> imagePixels, int height, int width);
 Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize);
 
 Eigen::VectorXd randomVector(int size, double epsilon);
+
+std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, std::vector<int> cols);
+
+std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, int col, int numDuplicates);
+
+std::vector<Eigen::VectorXd> zeroVector(std::vector<int> cols);

@@ -1,0 +1,6 @@
+/home/gabriel/Documents/HolyC/image_denoising/build/CMakeFiles/core.dir
+/home/gabriel/Documents/HolyC/image_denoising/build/CMakeFiles/algorithm.dir
+/home/gabriel/Documents/HolyC/image_denoising/build/CMakeFiles/image_denoising.dir
+/home/gabriel/Documents/HolyC/image_denoising/build/CMakeFiles/add_noise.dir
+/home/gabriel/Documents/HolyC/image_denoising/build/CMakeFiles/edit_cache.dir
+/home/gabriel/Documents/HolyC/image_denoising/build/CMakeFiles/rebuild_cache.dir

@@ -65,7 +65,8 @@ int main(int argc, char *argv[]){
     int patchSize;
     int stride;
 
-    /// TODO: cand folosesti SVD cu mai multe k-uri, sa ai tot atatea output-uri
+    /// TODO: sa vezi ca merge cmake-ul pentru main-ul algoritmului
+    /// TODO: apoi sa dai ca vector (mai multe valori pentru optiuni) pt argumentele blur si filter
 
     auto *patchSvd = app.add_subcommand("patch_svd", "Singular Value Decomposition with patches");
     patchSvd->add_option("--k", kVals, "Keep only the k-biggest singular values")
@@ -99,7 +100,8 @@ int main(int argc, char *argv[]){
     } else if(*svd || *patchSvd){
         toolkit.setMaxIterations(maxIterations);
         toolkit.setEpsilon(epsilon);
-        
+        toolkit.checkRank();
+
         if (*patchSvd){
             toolkit.setPatchSize(patchSize);
             toolkit.setStride(stride);
@@ -127,6 +129,7 @@ int main(int argc, char *argv[]){
     return 0;
 
     /// TODO: apoi rezolvat cmake-ul
+    /// TODO: de scris niste teste cu catch 2
 
     /*
     std::vector<int> stdDevs = {10};

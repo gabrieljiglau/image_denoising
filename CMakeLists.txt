@@ -3,17 +3,22 @@ project(image_denoising)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_library(image_denoising
-            src/utils.cpp
+add_library(core
+            src/utils.cpp)
+
+add_library(algorithm
             src/kernel_methods.cpp
             src/powerIteration.cpp
             src/toolkit.cpp)
 
 
-find_package(Eigen3 REQUIRED)
-target_include_directories(image_denoising PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs)
+target_include_directories(algorithm PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
-add_executable(image_denoising apps/main.cpp)
-add_executable(add_noise apps/add_noise.cpp)
+find_package(Eigen3 REQUIRED)
+target_link_libraries(algorithm PUBLIC Eigen3::Eigen)
+
+add_executable(image_denoising src/apps/main.cpp)
+add_executable(add_noise src/apps/add_noise.cpp)
 
 set_property(TARGET image_denoising PROPERTY CXX_STANDARD 17)

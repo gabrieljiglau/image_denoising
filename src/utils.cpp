@@ -152,6 +152,36 @@ void addGaussianNoise(std::vector<unsigned char>image, int height, int width, st
     }
 }
 
+std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, std::vector<int> cols){
+
+    std::vector<Eigen::MatrixXd> finalMatrices;
+    for (int colSize : cols){
+        finalMatrices.push_back(Eigen::MatrixXd::Zero(rows, colSize));
+    }
+    return finalMatrices;
+}
+
+std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, int col, int numDuplicates){
+
+    std::vector<Eigen::MatrixXd> finalMatrices;
+    int count = 0;
+    while (count < numDuplicates){
+        finalMatrices.push_back(Eigen::MatrixXd::Zero(rows, col));
+        count ++;
+    }
+    return finalMatrices;
+
+}
+
+std::vector<Eigen::VectorXd> zeroVector(std::vector<int> cols){
+
+    std::vector<Eigen::VectorXd> finalVectors;
+    for (int colSize : cols){
+        finalVectors.push_back(Eigen::VectorXd::Zero(colSize));
+    }
+    return finalVectors;
+}
+
 Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize) {
 
     int rows = A.rows();

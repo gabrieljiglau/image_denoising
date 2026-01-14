@@ -1,6 +1,7 @@
 #include "include/power_iteration.hpp"
 #include "include/utils.hpp"
 #include <Eigen/src/Core/Matrix.h>
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <Eigen/Dense>
@@ -15,16 +16,20 @@
  * @return The truncated channel as an Eigen::MatrixXd.
  *
  */
-Eigen::MatrixXd SVD::powerIteration(Eigen::MatrixXd A, int k, int maxIterations, double epsilon){
+std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<int> k, int maxIterations, double epsilon){
 
-    Eigen::MatrixXd U = Eigen::MatrixXd::Zero(A.rows(), k);
-    Eigen::VectorXd S = Eigen::VectorXd::Zero(k);
-    Eigen::MatrixXd V = Eigen::MatrixXd::Zero(A.cols(), k);
+    std::sort(k.begin(), k.end()); // ensure that k's are in order
+
+    int biggestK = k[k.size() - 1];
+
+    std::vector<Eigen::MatrixXd> U = zeroMatrix(A.rows(), k);
+    std::vector<Eigen::VectorXd> S = zeroVector(k);
+    std::vector<Eigen::MatrixXd> V = zeroMatrix(A.cols(), k);
 
     Eigen::MatrixXd A_copy = A;
-    Eigen::MatrixXd A_final = Eigen::MatrixXd::Zero(A.rows(), A.cols());
+    std::vector<Eigen::MatrixXd> A_final = zeroMatrix(A.rows(), A.cols(), k.size());
 
-    for (int idx = 0; idx < k; idx++){
+    for (int idx = 0; idx < biggestK; idx++){
 
         std::cout << "Now at singular value number " << idx + 1 << std::endl;
 
@@ -65,17 +70,22 @@ Eigen::MatrixXd SVD::powerIteration(Eigen::MatrixXd A, int k, int maxIterations,
         u /= singularValue;
         std::cout << "singular value = " << singularValue << std::endl;
         
-
-        U.col(idx) = u; // or U.block(0, idx, U.rows(), 1) = u; 
-        S(idx) = singularValue;
-        V.col(idx) = v;
+        for (int updateIdx = 0; updateIdx < k.size(); updateIdx++){
+            U[updateIdx].col(idx) = u; // or U.block(0, idx, U.rows(), 1) = u; 
+            S[updateIdx](idx) = singularValue;
+            V[updateIdx].col(idx) = v;
+        }
 
 
         // deflation step: remove rank-1 component
         A_copy -= singularValue * u * v.transpose();
         
-        // reconstruction
-        A_final += singularValue * u * v.transpose();
+        // reconstruction for each k
+        for (int updateIdx = 0; updateIdx < k.size(); updateIdx++){
+            if (k[updateIdx] <= idx){
+                A_final[updateIdx] += singularValue * u * v.transpose();
+            }
+        }
 
         //std::cout << "u = :" << std::endl << u << std::endl;
         //std::cout << "v = :" << std::endl << v << std::endl;
@@ -92,12 +102,7 @@ std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(){
     std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3);
 
     for (int i = 0; i < kVals.size(); i++){
-        std::vector<Eigen::MatrixXd> currentReconstruction(3);
-        for (int j = 0; i < finalMatrices.size(); j++){
-            Eigen::MatrixXd newChannel = powerIteration(channels[i], kVals[j], maxIterations, epsilon);
-            currentReconstruction[j] = newChannel;
-        }
-        finalMatrices[i] = currentReconstruction;
+        finalMatrices[i] = powerIteration(channels[i], kVals, maxIterations, epsilon);
     }
 
     return finalMatrices;
@@ -112,14 +117,22 @@ void SVD::cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, 
     }
 }
 
-Eigen::MatrixXd SVD::averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights){
+std::vector<Eigen::MatrixXd> SVD::averagePixels(std::vector<Eigen::MatrixXd> A, std::vector<Eigen::MatrixXd> weights){
 
-    assert (A.rows() == weights.rows() && A.cols() == weights.cols());
+    assert (A.size() == weights.size());
 
-    for (int i = 0; i < A.rows(); i++){
-        for (int j = 0; j < A.cols(); j++){
-            if (weights(i, j) > 0){
-                A(i, j) /= weights(i, j);
+    for (int idx = 0; idx < A.size(); idx++){
+
+        Eigen::MatrixXd innerA = A[idx];
+        Eigen::MatrixXd innerW = weights[idx];
+        
+        assert (innerA.rows() == innerW.rows() && innerA.cols() == innerW.cols());
+
+        for (int i = 0; i < innerA.rows(); i++){
+            for (int j = 0; j < innerA.cols(); j++){
+                if (innerW(i, j) > 0){
+                    innerA(i, j) /= innerW(i, j);
+                }
             }
         }
     }
@@ -137,13 +150,13 @@ Eigen::MatrixXd SVD::averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights){
  * @param k Keep only the k-biggest singular values
  * @param maxIterations Max iterations for the algorithm
  * @param epsilon Floating point precision for computations
- * @return The truncated channel as an Eigen::MatrixXd.
+ * @return The truncated channel as a vector of Eigen::MatrixXd.
  *
  */
-Eigen::MatrixXd SVD::applyPatches(Eigen::MatrixXd A, int patchSize, int stride, int k, int maxIterations, double epsilon){
+std::vector<Eigen::MatrixXd> SVD::applyPatches(Eigen::MatrixXd A, int patchSize, int stride, std::vector<int> k, int maxIterations, double epsilon){
 
-    Eigen::MatrixXd A_final = Eigen::MatrixXd::Zero(A.rows(), A.cols());
-    Eigen::MatrixXd weights = Eigen::MatrixXd::Zero(A.rows(), A.cols());
+    std::vector<Eigen::MatrixXd> A_final = zeroMatrix(A.rows(), A.cols(), k.size());
+    std::vector<Eigen::MatrixXd> weights = zeroMatrix(A.rows(), A.cols(), k.size());
 
     for (int row = 0; row < A.rows(); row += stride){
         int rowStart = 0;
@@ -162,11 +175,14 @@ Eigen::MatrixXd SVD::applyPatches(Eigen::MatrixXd A, int patchSize, int stride, 
             }
 
             Eigen::MatrixXd patch = A.block(rowStart, colStart, patchSize, patchSize);
-            Eigen::MatrixXd newPatch = powerIteration(patch, k, maxIterations, epsilon);
+            std::vector<Eigen::MatrixXd> newPatches = powerIteration(patch, k, maxIterations, epsilon);
 
             // there might be multiple patches for a given pixel
-            A_final.block(rowStart, colStart, patchSize, patchSize) += newPatch;
-            cumulateWeights(weights, rowStart, colStart, patchSize);
+
+            for (int updateIdx = 0; updateIdx < k.size(); updateIdx++){
+                A_final[updateIdx].block(rowStart, colStart, patchSize, patchSize) += newPatches[updateIdx];
+                cumulateWeights(weights[updateIdx], rowStart, colStart, patchSize);
+            }
 
         }
     }
@@ -181,12 +197,8 @@ std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(int patchSize, int stride){
     std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3);
 
     for (int i = 0; i < kVals.size(); i++){
-        std::vector<Eigen::MatrixXd> currentReconstruction(3);
-        for (int j = 0; i < finalMatrices.size(); j++){
-            Eigen::MatrixXd newChannel = applyPatches(channels[i], patchSize, stride, kVals[i], maxIterations, epsilon);
-            currentReconstruction[j] = newChannel;
-        }
-        finalMatrices[i] = currentReconstruction;
+        std::vector<Eigen::MatrixXd> currentReconstruction(3);        
+        finalMatrices[i] = applyPatches(channels[i], patchSize, stride, kVals, maxIterations, epsilon);
     }
 
     return  finalMatrices;

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libalgorithm.a CMakeFiles/algorithm.dir/src/kernel_methods.cpp.o CMakeFiles/algorithm.dir/src/powerIteration.cpp.o CMakeFiles/algorithm.dir/src/toolkit.cpp.o
+/usr/bin/ranlib libalgorithm.a

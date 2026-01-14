@@ -15,11 +15,11 @@ class SVD: public IAlgorithm{
         int patchSize;
         int stride;
 
-        Eigen::MatrixXd powerIteration(Eigen::MatrixXd A, int k, int maxIterations, double epsilon);
-        Eigen::MatrixXd applyPatches(Eigen::MatrixXd A, int patchSize, int stride, int k, int maxIterations, double epsilon);
+        std::vector<Eigen::MatrixXd> powerIteration(Eigen::MatrixXd A, std::vector<int> k, int maxIterations, double epsilon);
+        std::vector<Eigen::MatrixXd> applyPatches(Eigen::MatrixXd A, int patchSize, int stride, std::vector<int> k, int maxIterations, double epsilon);
 
         void cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize);
-        Eigen::MatrixXd  averagePixels(Eigen::MatrixXd A, Eigen::MatrixXd weights);
+        std::vector<Eigen::MatrixXd> averagePixels(std::vector<Eigen::MatrixXd> A, std::vector<Eigen::MatrixXd> weights);
 
 
     public:
