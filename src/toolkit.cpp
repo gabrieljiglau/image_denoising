@@ -5,21 +5,22 @@
 #include "libs/lodepng.h"
 #include <Eigen/src/QR/ColPivHouseholderQR.h>
 #include <iostream>
-
+    
 
 int Toolkit::loadPng(std::string pngPath){
 
-    unsigned width; // img_row
-    unsigned height; // img_col
-
-    unsigned error = lodepng::decode(this->image, width, height, pngPath);
+    unsigned error = lodepng::decode(this->image, this->width, this->height, pngPath);
     return error;
 }
 
-/// remove the k values that do not comply to: k < rank(A)
+/// remove from the input the k values that do not comply to: k < rank(A)
 void Toolkit::checkRank(){
 
-    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(channels[0]);
+    /// TODO: functia asta 'sparta' intr-o functie de initializare si in una de verificare a k-ului 
+    
+    rgbChannel();
+    std::cout << "channels[0].size()" << this->channels[1].size() << std::endl;
+    Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(this->channels[0]);
     int rank = qr.rank();
 
     int oldSize = kVals.size();
@@ -29,30 +30,33 @@ void Toolkit::checkRank(){
         [rank](int k) {return k > rank; }),
         kVals.end()
     );
+
 }
 
 
-std::vector<Eigen::MatrixXd> Toolkit::rgbChannel(){
+void Toolkit::rgbChannel(){
+
+    loadPng(this->imagePath);
+
+    std::cout << "this.width = " << this->width << " this.height = " << this->height << std::endl;
 
     std::vector<std::vector<int>> channelMatrices(3);
-    std::vector<Eigen::MatrixXd> finalMatrices(3);
 
     for (unsigned int col = 0; col < height; col++){ // height        
         for (unsigned int row = 0; row < width; row++){ //width
             int idx = 4 * (col * width + row);
-            channelMatrices[0].push_back(image[idx]);
-            channelMatrices[1].push_back(image[idx + 1]);
-            channelMatrices[2].push_back(image[idx + 2]);
+            channelMatrices[0].push_back((int)this->image[idx]);
+            channelMatrices[1].push_back((int)this->image[idx + 1]);
+            channelMatrices[2].push_back((int)this->image[idx + 2]);
         }
     }
 
-    for (int i = 0; i < finalMatrices.size(); i++){
+    for (int i = 0; i < channelMatrices.size(); i++){
         std::vector<int> channel = channelMatrices[i];
         Eigen::Map<Eigen::Matrix<int, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> mappedMatrix(channel.data(), height, width);
-        finalMatrices[i] = mappedMatrix.cast<double>();
+        this->channels.push_back(mappedMatrix.cast<double>());
     }
     
-    return finalMatrices;
 }
 
 
@@ -114,19 +118,19 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
  * @brief Applies the transformation based on the given 'mode' and saves the reconstructed image to 𝘯𝘦𝘸𝘗𝘢𝘵𝘩
  *
  */
-std::vector<int> Toolkit::processPng(std::string inputPng, std::string newPath){
+std::vector<int> Toolkit::processPng(std::string inputPng, std::vector<std::string> newPaths){
 
     IAlgorithm *algorithm;
     std::vector<int> errCodes;
     std::vector<std::vector<Eigen::MatrixXd>> truncatedChannels;
 
-    if (mode == "blur"){
+    if (this->mode == "blur"){
         algorithm = new GaussianBlur(channels, kernelSize, stddev);
-    } else if (mode == "filter"){
+    } else if (this->mode == "filter"){
         algorithm = new MedianFilter(channels, windowSize);
-    } else if (mode == "svd"){
+    } else if (this->mode == "svd"){
         algorithm = new SVD(channels, kVals, maxIterations, epsilon);
-    } else if (mode == "patch_svd"){
+    } else if (this->mode == "patch_svd"){
         SVD patchSVD = SVD(channels, kVals ,maxIterations, epsilon);
         truncatedChannels = patchSVD.apply(patchSize, stride);
     }
@@ -136,7 +140,9 @@ std::vector<int> Toolkit::processPng(std::string inputPng, std::string newPath){
     }
     
     std::vector<unsigned char> newImage;
-    for (auto channel : truncatedChannels){
+    for (int i = 0; i < truncatedChannels.size(); i++){
+        std::vector<Eigen::MatrixXd> channel = truncatedChannels[i];
+        std::string newPath = newPaths[i];
         errCodes.push_back(reconstructImage(channel, newImage, newPath));
     }
     

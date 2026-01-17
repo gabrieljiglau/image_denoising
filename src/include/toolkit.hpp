@@ -9,8 +9,9 @@ class Toolkit{
     private:
 
         std::vector<unsigned char> image;
-        int width;
-        int height;
+        std::string imagePath;
+        unsigned int width;
+        unsigned int height;
 
         std::string mode;
 
@@ -34,15 +35,11 @@ class Toolkit{
 
         IAlgorithm *algorithm;
 
-        std::vector<Eigen::MatrixXd> rgbChannel();
+        void rgbChannel();
 
     public:
 
-        Toolkit(std::string imagePath, std::string mode, int width = 0, int height = 0): mode(mode), width(width), height(height) {    
-            loadPng(imagePath);     // fills internally this->image
-            this->channels = rgbChannel();  // transform the image into Eigen::MatrixXd 
-        };
-                
+        Toolkit(std::string imagePath, unsigned int width = 0, unsigned int height = 0): imagePath(imagePath), width(width), height(height) {};
 
         int loadPng(std::string pngPath);
 
@@ -51,6 +48,8 @@ class Toolkit{
         //std::vector<Eigen::MatrixXd> getChannels() {return this->channels;}
 
         void checkRank();
+
+        void setMode(std::string mode) {this->mode = mode;}
 
         void setKernelSize(int kernelSize) {this->kernelSize = kernelSize;}
         void setStddev(double stddev) {this->stddev = stddev;}
@@ -64,6 +63,6 @@ class Toolkit{
         void setPatchSize(int patchSize) {this->patchSize = patchSize;}
         void setStride(int stride) {this->stride = stride;}
 
-        std::vector<int> processPng(std::string inputPng, std::string newPath);
+        std::vector<int> processPng(std::string inputPng, std::vector<std::string> newPaths);
 
 };

@@ -14,15 +14,11 @@ int main(int argc, char *argv[]){
     CLI::App app{"Image denoising tool"};
 
     std::string inputPng;
-    std::string outputPng;
-    std::string mode;
-
+    std::vector<std::string> outputPngs;
     
     app.add_option("-i, --input", inputPng, "Input image path (png format)")
         ->required();
-    app.add_option("--o, --output", outputPng, "Output path (png format)")
-        ->required();
-    app.add_option("--m, --mode", mode, "What algorithm to run")
+    app.add_option("--o, --output", outputPngs, "Output paths (png format)")
         ->required();
     
     // Gaussian Blur mode
@@ -84,47 +80,54 @@ int main(int argc, char *argv[]){
         
     CLI11_PARSE(app, argc, argv);
 
-    Toolkit toolkit(inputPng, mode);
+    Toolkit toolkit(inputPng);
     
     if (*blur) {
         toolkit.setKernelSize(kernelSize);
         toolkit.setStddev(stddev);
+        toolkit.setMode("blur");
         
         std::cout << "Applying Gaussian Blur \n" << std::endl;
     
     } else if (*filter){
         toolkit.setWindowSize(windowSize);
+        toolkit.setMode("filter");
         
         std::cout << "Applying Median Filter \n" << std::endl;
     
-    } else if(*svd || *patchSvd){
+    } else if(*svd || *patchSvd) {
         toolkit.setMaxIterations(maxIterations);
         toolkit.setEpsilon(epsilon);
+
+        std::cout << "OK 1" << std::endl;
         toolkit.checkRank();
+        std::cout << "OK 2" << std::endl;
 
         if (*patchSvd){
             toolkit.setPatchSize(patchSize);
             toolkit.setStride(stride);
+            toolkit.setMode("patch_svd");
 
             std::cout << "Applying patch SVD \n" << std::endl;
         } else {
             std::cout << "Applying standard SVD \n" << std::endl;
+            toolkit.setMode("svd");
         }
     }
 
     std::vector<int> errCodes;
     if (!*svd || *patchSvd){
-        errCodes = toolkit.processPng(inputPng, outputPng);   
+        errCodes = toolkit.processPng(inputPng, outputPngs);   
     } else {
         toolkit.setK(kVals);
-        errCodes = toolkit.processPng(inputPng, outputPng);
+        errCodes = toolkit.processPng(inputPng, outputPngs);
     }
 
     for (int errCode : errCodes){
         if (errCode != 0) {
             std::cout << "Encountered error code : " << errCode << " when processing the image with lodepng" << std::endl;
         }
-    }
+    } 
 
     return 0;
 
