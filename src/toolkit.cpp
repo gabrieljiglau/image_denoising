@@ -5,6 +5,7 @@
 #include "libs/lodepng.h"
 #include <Eigen/src/QR/ColPivHouseholderQR.h>
 #include <iostream>
+#include <vector>
     
 
 int Toolkit::loadPng(std::string pngPath){
@@ -19,7 +20,6 @@ void Toolkit::checkRank(){
     /// TODO: functia asta 'sparta' intr-o functie de initializare si in una de verificare a k-ului 
     
     rgbChannel();
-    std::cout << "channels[0].size()" << this->channels[1].size() << std::endl;
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(this->channels[0]);
     int rank = qr.rank();
 
@@ -37,8 +37,6 @@ void Toolkit::checkRank(){
 void Toolkit::rgbChannel(){
 
     loadPng(this->imagePath);
-
-    std::cout << "this.width = " << this->width << " this.height = " << this->height << std::endl;
 
     std::vector<std::vector<int>> channelMatrices(3);
 
@@ -72,7 +70,12 @@ void Toolkit::rgbChannel(){
  */
 int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std::vector<unsigned char> &newImage, std::string newPath){
     
+    std::cout << "unde incepe sa latre ?" << std::endl;
     std::vector<Eigen::RowVectorXd> rowVectors;
+
+    std::cout << "truncatedChannels.size() = " << truncatedChannels.size() << std::endl;
+
+    /// TODO: de modificat aici logica, deoarece acum truncated channels la un anumit index contine toate cele 3 canale
 
     for (Eigen::MatrixXd channel: truncatedChannels){
         Eigen::RowVectorXd innerVector(channel.size());
@@ -87,7 +90,10 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
         rowVectors.push_back(innerVector);
     }
 
+    std::cout << "aici ?" << std::endl;
+
     int size = rowVectors[0].size();
+    std::cout << "size = " << size << std::endl;
     for (int i = 0; i < size; i++){
 
         int r = (int) rowVectors[0](i);
@@ -103,12 +109,18 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
         newImage.push_back(g);
         newImage.push_back(b);
         newImage.push_back(a);
+        std::cout << "i = " << i << std::endl;
     }
+
+    std::cout << "sau aici ?" << std::endl;
+
 
     int error = lodepng::encode(newPath, newImage, width, height);
     if (error) {
         std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
         return error;
+    } else {
+        std::cout << "Processed image saved to " << newPath << std::endl;
     }
 
     return 0;
@@ -119,6 +131,11 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
  *
  */
 std::vector<int> Toolkit::processPng(std::string inputPng, std::vector<std::string> newPaths){
+
+    if (newPaths.size() != kVals.size() && !kVals.empty()){
+        std::cout << "There must be 1:1 ration between kVals and the paths to store the image";
+        return std::vector<int>();
+    }
 
     IAlgorithm *algorithm;
     std::vector<int> errCodes;
@@ -139,11 +156,9 @@ std::vector<int> Toolkit::processPng(std::string inputPng, std::vector<std::stri
         truncatedChannels = algorithm->apply();
     }
     
-    std::vector<unsigned char> newImage;
-    for (int i = 0; i < truncatedChannels.size(); i++){
-        std::vector<Eigen::MatrixXd> channel = truncatedChannels[i];
-        std::string newPath = newPaths[i];
-        errCodes.push_back(reconstructImage(channel, newImage, newPath));
+    std::vector<std::vector<unsigned char>> newImages(newPaths.size());
+    for (int i = 0; i < kVals.size(); i++){
+        errCodes.push_back(reconstructImage(truncatedChannels[i], newImages[i], newPaths[i]));
     }
     
     delete algorithm;

@@ -31,7 +31,7 @@ std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<
 
     for (int idx = 0; idx < biggestK; idx++){
 
-        std::cout << "Now at singular value number " << idx + 1 << std::endl;
+        //std::cout << "Now at singular value number " << idx + 1;
 
         //v -> the right singular vector
         Eigen::VectorXd v = randomVector(A.cols(), epsilon);
@@ -68,21 +68,22 @@ std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<
         u = A_copy * v;
         double singularValue = u.norm();
         u /= singularValue;
-        std::cout << "singular value = " << singularValue << std::endl;
+        //std::cout << "; singular value = " << singularValue << std::endl;
         
         for (int updateIdx = 0; updateIdx < k.size(); updateIdx++){
-            U[updateIdx].col(idx) = u; // or U.block(0, idx, U.rows(), 1) = u; 
-            S[updateIdx](idx) = singularValue;
-            V[updateIdx].col(idx) = v;
+            if (k[updateIdx] > idx) {
+                U[updateIdx].col(idx) = u; // or U.block(0, idx, U.rows(), 1) = u; 
+                S[updateIdx](idx) = singularValue;
+                V[updateIdx].col(idx) = v;
+            }
         }
-
 
         // deflation step: remove rank-1 component
         A_copy -= singularValue * u * v.transpose();
-        
+
         // reconstruction for each k
         for (int updateIdx = 0; updateIdx < k.size(); updateIdx++){
-            if (k[updateIdx] <= idx){
+            if (k[updateIdx] > idx){
                 A_final[updateIdx] += singularValue * u * v.transpose();
             }
         }
@@ -92,21 +93,34 @@ std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<
     }
 
     //std::cout << "A_final " << std::endl << A_final << std::endl;
-    return A_final;
+    return A_final; // vec k1, vec k2, vec k3
 }
 
 
 /// Applies the powerIteration on all 3 channels from the image
 std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(){
 
-    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3);
+    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3, std::vector<Eigen::MatrixXd>(kVals.size()));
 
-    for (int i = 0; i < kVals.size(); i++){
-        finalMatrices[i] = powerIteration(channels[i], kVals, maxIterations, epsilon);
+    /// TODO: modificat aici
+    // tine cont de faptul ca powerIteration returneaza: // vec k1, vec k2, vec k3
+
+    for (int i = 0; i < finalMatrices.size(); i++){
+        std::cout << "Now at channel " << i + 1 << std::endl;
+
+        /// aici logica e gresita, deoarece daca ai un singur k / sau doi,  kreconstruction.size = 1, respectiv 2
+        // si nu apuci sa muti matricea in 'finalMatrices' 
+        std::vector<Eigen::MatrixXd> kReconstructions = powerIteration(channels[i], kVals, maxIterations, epsilon);
+        std::cout << " kReconstructions.size() = " << kReconstructions.size() << std::endl;
+        for (int j = 0; j < kReconstructions.size(); j++){
+            finalMatrices[i][j] = kReconstructions[j];
+        }
     }
 
+    std::cout << "apply in svd ok " << std::endl; 
     return finalMatrices;
 }
+
 
 void SVD::cumulateWeights(Eigen::MatrixXd &weights, int rowStart, int colStart, int patchSize){
 

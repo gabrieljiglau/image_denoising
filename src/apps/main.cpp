@@ -98,10 +98,7 @@ int main(int argc, char *argv[]){
     } else if(*svd || *patchSvd) {
         toolkit.setMaxIterations(maxIterations);
         toolkit.setEpsilon(epsilon);
-
-        std::cout << "OK 1" << std::endl;
         toolkit.checkRank();
-        std::cout << "OK 2" << std::endl;
 
         if (*patchSvd){
             toolkit.setPatchSize(patchSize);

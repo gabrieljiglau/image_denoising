@@ -10,6 +10,37 @@
 #include <Eigen/Dense>
 
 
+std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, std::vector<int> cols){
+
+    std::vector<Eigen::MatrixXd> finalMatrices;
+    for (int colSize : cols){
+        finalMatrices.push_back(Eigen::MatrixXd::Zero(rows, colSize));
+    }
+    return finalMatrices;
+}
+
+std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, int col, int numDuplicates){
+
+    std::vector<Eigen::MatrixXd> finalMatrices;
+    int count = 0;
+    while (count < numDuplicates){
+        finalMatrices.push_back(Eigen::MatrixXd::Zero(rows, col));
+        count ++;
+    }
+    return finalMatrices;
+
+}
+
+std::vector<Eigen::VectorXd> zeroVector(std::vector<int> cols){
+
+    std::vector<Eigen::VectorXd> finalVectors;
+    for (int colSize : cols){
+        finalVectors.push_back(Eigen::VectorXd::Zero(colSize));
+    }
+    return finalVectors;
+}
+
+
 Eigen::VectorXd randomVector(int size, double epsilon){
     
     Eigen::VectorXd vector = Eigen::VectorXd(size);
@@ -150,36 +181,6 @@ void addGaussianNoise(std::vector<unsigned char>image, int height, int width, st
         generateNoisyImage(image, newImage, newPath, height, width, mean, stdDev);
         std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << newPath << std::endl;
     }
-}
-
-std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, std::vector<int> cols){
-
-    std::vector<Eigen::MatrixXd> finalMatrices;
-    for (int colSize : cols){
-        finalMatrices.push_back(Eigen::MatrixXd::Zero(rows, colSize));
-    }
-    return finalMatrices;
-}
-
-std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, int col, int numDuplicates){
-
-    std::vector<Eigen::MatrixXd> finalMatrices;
-    int count = 0;
-    while (count < numDuplicates){
-        finalMatrices.push_back(Eigen::MatrixXd::Zero(rows, col));
-        count ++;
-    }
-    return finalMatrices;
-
-}
-
-std::vector<Eigen::VectorXd> zeroVector(std::vector<int> cols){
-
-    std::vector<Eigen::VectorXd> finalVectors;
-    for (int colSize : cols){
-        finalVectors.push_back(Eigen::VectorXd::Zero(colSize));
-    }
-    return finalVectors;
 }
 
 Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize) {
