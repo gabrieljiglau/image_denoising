@@ -18,6 +18,8 @@
  */
 std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<int> k, int maxIterations, double epsilon){
 
+    std::cout << "k.size() = " << k.size() << std::endl;
+
     std::sort(k.begin(), k.end()); // ensure that k's are in order
 
     int biggestK = k[k.size() - 1];
@@ -28,7 +30,7 @@ std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<
 
     Eigen::MatrixXd A_copy = A;
     std::vector<Eigen::MatrixXd> A_final = zeroMatrix(A.rows(), A.cols(), k.size());
-
+    
     for (int idx = 0; idx < biggestK; idx++){
 
         //std::cout << "Now at singular value number " << idx + 1;
@@ -100,24 +102,15 @@ std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<
 /// Applies the powerIteration on all 3 channels from the image
 std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(){
 
-    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3, std::vector<Eigen::MatrixXd>(kVals.size()));
+    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(kVals.size(), std::vector<Eigen::MatrixXd>(3));
 
-    /// TODO: modificat aici
-    // tine cont de faptul ca powerIteration returneaza: // vec k1, vec k2, vec k3
-
-    for (int i = 0; i < finalMatrices.size(); i++){
-        std::cout << "Now at channel " << i + 1 << std::endl;
-
-        /// aici logica e gresita, deoarece daca ai un singur k / sau doi,  kreconstruction.size = 1, respectiv 2
-        // si nu apuci sa muti matricea in 'finalMatrices' 
+    for (int i = 0; i < 3; i++){ // 3 is the number of channels (R/G/B)
         std::vector<Eigen::MatrixXd> kReconstructions = powerIteration(channels[i], kVals, maxIterations, epsilon);
-        std::cout << " kReconstructions.size() = " << kReconstructions.size() << std::endl;
-        for (int j = 0; j < kReconstructions.size(); j++){
-            finalMatrices[i][j] = kReconstructions[j];
+        for (int j = 0; j < kVals.size(); j++){
+            finalMatrices[j][i] = kReconstructions[j];
         }
     }
 
-    std::cout << "apply in svd ok " << std::endl; 
     return finalMatrices;
 }
 
@@ -190,7 +183,6 @@ std::vector<Eigen::MatrixXd> SVD::applyPatches(Eigen::MatrixXd A, int patchSize,
 
             Eigen::MatrixXd patch = A.block(rowStart, colStart, patchSize, patchSize);
             std::vector<Eigen::MatrixXd> newPatches = powerIteration(patch, k, maxIterations, epsilon);
-
             // there might be multiple patches for a given pixel
 
             for (int updateIdx = 0; updateIdx < k.size(); updateIdx++){
@@ -208,11 +200,14 @@ std::vector<Eigen::MatrixXd> SVD::applyPatches(Eigen::MatrixXd A, int patchSize,
 /// Applies the patch SVD on all 3 channels from the image
 std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(int patchSize, int stride){
 
-    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(3);
+    std::vector<std::vector<Eigen::MatrixXd>> finalMatrices(kVals.size(), std::vector<Eigen::MatrixXd>(3));
 
-    for (int i = 0; i < kVals.size(); i++){
-        std::vector<Eigen::MatrixXd> currentReconstruction(3);        
-        finalMatrices[i] = applyPatches(channels[i], patchSize, stride, kVals, maxIterations, epsilon);
+    for (int i = 0; i < 3; i++){
+        std::vector<Eigen::MatrixXd> currentReconstruction = applyPatches(channels[i], patchSize, stride, kVals, maxIterations, epsilon);
+        std::cout << "aici ?? " << std::endl;
+        for (int j = 0; j < kVals.size(); j++){
+            finalMatrices[j][i] = currentReconstruction[j];
+        }
     }
 
     return  finalMatrices;

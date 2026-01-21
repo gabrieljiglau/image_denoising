@@ -61,9 +61,6 @@ int main(int argc, char *argv[]){
     int patchSize;
     int stride;
 
-    /// TODO: sa vezi ca merge cmake-ul pentru main-ul algoritmului
-    /// TODO: apoi sa dai ca vector (mai multe valori pentru optiuni) pt argumentele blur si filter
-
     auto *patchSvd = app.add_subcommand("patch_svd", "Singular Value Decomposition with patches");
     patchSvd->add_option("--k", kVals, "Keep only the k-biggest singular values")
         ->required()
@@ -96,6 +93,7 @@ int main(int argc, char *argv[]){
         std::cout << "Applying Median Filter \n" << std::endl;
     
     } else if(*svd || *patchSvd) {
+        toolkit.setK(kVals);
         toolkit.setMaxIterations(maxIterations);
         toolkit.setEpsilon(epsilon);
         toolkit.checkRank();
@@ -113,12 +111,7 @@ int main(int argc, char *argv[]){
     }
 
     std::vector<int> errCodes;
-    if (!*svd || *patchSvd){
-        errCodes = toolkit.processPng(inputPng, outputPngs);   
-    } else {
-        toolkit.setK(kVals);
-        errCodes = toolkit.processPng(inputPng, outputPngs);
-    }
+    errCodes = toolkit.processPng(inputPng, outputPngs);   
 
     for (int errCode : errCodes){
         if (errCode != 0) {
@@ -128,56 +121,6 @@ int main(int argc, char *argv[]){
 
     return 0;
 
-    /// TODO: apoi rezolvat cmake-ul
     /// TODO: de scris niste teste cu catch 2
-
-    /*
-    std::vector<int> stdDevs = {10};
-    addGaussianNoise(image, height, width, stdDevs);
-    */
-    /*
-    addSaltPepperNoise(image, newImage, "/home/gabriel/Documents/HolyC/image_denoising/images/noisy/car_salt_pepper.png",
-                     height, width, 0.1);
-    */
-    /*
-    std::vector<Eigen::MatrixXd> channels = rgbChannel(image, height, width);
-    int windowSize = 3;
-    std::vector<Eigen::MatrixXd> medianChannels = applyMedianFilter(channels, windowSize);
-    std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised/denoised_car_median.png");
-    reconstructImage(medianChannels, newImage, newPath, height, width);
-    */  
-    
-    
-    // gaussianBlur after SVD
-    /*
-    int kernelSize = 3;
-    std::vector<int> stdDevs = {2, 5, 10, 20};
-    for (int stdDev : stdDevs){
-        std::vector<Eigen::MatrixXd> blurredChannels = applyGaussianBlur(channels, kernelSize, stdDev);
-        std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised/denoised_k{}_afterBlur.png", stdDev);
-        reconstructImage(blurredChannels, newImage, newPath, height, width);
-    }
-    */
-
-
-
-    /*
-    // median filter (before/after SVD); still bad results
-    int windowSize = 2;
-    std::vector<Eigen::MatrixXd> medianChannels = applyMedianFilter(channels, windowSize);
-    std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised_k50_median.png");
-    reconstructImage(medianChannels, newImage, newPath, height, width);
-    */
-
-    // svd on smaller submatrices of the original image, bad results
-    /*=
-    int patchSize = 16;
-    int stride = 12;
-    int k = 2;
-    
-    std::vector<Eigen::MatrixXd> finalChannels = patchesDecomp(channels, patchSize, stride, k, maxIterations, epsilon);
-    std::string newPath = fmt::format("/home/gabriel/Documents/HolyC/image_denoising/images/denoised_k{}.png", k);
-    reconstructImage(finalChannels, newImage, newPath, height, width);
-    */
 
 }

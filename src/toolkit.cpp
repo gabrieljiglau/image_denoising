@@ -70,14 +70,10 @@ void Toolkit::rgbChannel(){
  */
 int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std::vector<unsigned char> &newImage, std::string newPath){
     
-    std::cout << "unde incepe sa latre ?" << std::endl;
     std::vector<Eigen::RowVectorXd> rowVectors;
 
-    std::cout << "truncatedChannels.size() = " << truncatedChannels.size() << std::endl;
-
-    /// TODO: de modificat aici logica, deoarece acum truncated channels la un anumit index contine toate cele 3 canale
-
     for (Eigen::MatrixXd channel: truncatedChannels){
+        std::cout << " channel.size() = " << channel.size() << std::endl;
         Eigen::RowVectorXd innerVector(channel.size());
 
         // Eigen stores matrices in column-major order
@@ -90,10 +86,12 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
         rowVectors.push_back(innerVector);
     }
 
+    std::cout << "rowVectors.size() " << rowVectors.size() << std::endl;
     std::cout << "aici ?" << std::endl;
 
     int size = rowVectors[0].size();
-    std::cout << "size = " << size << std::endl;
+    std::cout << rowVectors[0].size() << " , " << rowVectors[1].size() << " , " << rowVectors[2].size();
+
     for (int i = 0; i < size; i++){
 
         int r = (int) rowVectors[0](i);
@@ -109,14 +107,10 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
         newImage.push_back(g);
         newImage.push_back(b);
         newImage.push_back(a);
-        std::cout << "i = " << i << std::endl;
     }
 
-    std::cout << "sau aici ?" << std::endl;
-
-
     int error = lodepng::encode(newPath, newImage, width, height);
-    if (error) {
+    if (error != 0) {
         std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
         return error;
     } else {
@@ -157,7 +151,7 @@ std::vector<int> Toolkit::processPng(std::string inputPng, std::vector<std::stri
     }
     
     std::vector<std::vector<unsigned char>> newImages(newPaths.size());
-    for (int i = 0; i < kVals.size(); i++){
+    for (int i = 0; i < newPaths.size(); i++){
         errCodes.push_back(reconstructImage(truncatedChannels[i], newImages[i], newPaths[i]));
     }
     
