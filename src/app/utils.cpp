@@ -1,5 +1,5 @@
 #include "include/utils.hpp"
-#include "libs/lodepng.h"
+#include "../libs/lodepng.h"
 #include <Eigen/src/Core/Matrix.h>
 #include <random>
 #include <cmath>
@@ -139,8 +139,9 @@ void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<un
 
 }
 
-void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned char> &newImage, std::string savingPath, 
-                        int height, int width, float threshold){
+void addSaltPepperNoise(std::vector<unsigned char> image, std::string savingPath, int height, int width, float threshold){
+
+    std::vector<unsigned char> newImage;
 
     for (unsigned int col = 0; col < height; col++){
         for (unsigned int row = 0; row < width; row++){
@@ -170,21 +171,18 @@ void addSaltPepperNoise(std::vector<unsigned char> image, std::vector<unsigned c
 }
 
 
-void addGaussianNoise(std::vector<unsigned char>image, int height, int width, std::vector<int> stdDevs, std::string savingPath){
+void addGaussianNoise(std::vector<unsigned char>image, int height, int width, int mean, std::vector<double> stdDevs, std::vector<std::string> savingPaths){
 
-    int mean = 0; //mu
-    std::string newPath;
-    std::vector<unsigned char> newImage;
+    std::vector<std::vector<unsigned char>> newImages(savingPaths.size());
 
-    for (int stdDev : stdDevs){
-        newPath = fmt::format(savingPath + "/noisy/noisy_mu{}_std{}.png", mean, stdDev);
-        generateNoisyImage(image, newImage, newPath, height, width, mean, stdDev);
-        std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << newPath << std::endl;
+    for (int i = 0; i < stdDevs.size(); i++){
+        generateNoisyImage(image, newImages[i], savingPaths[i], height, width, mean, stdDevs[i]);
+        std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << savingPaths[i] << std::endl;
     }
 }
 
-Eigen::MatrixXd padMatrixReflect(const Eigen::MatrixXd &A, int padSize) {
-
+Eigen::MatrixXd padMatrixReflect(Eigen::MatrixXd A, int padSize) {
+    
     int rows = A.rows();
     int cols = A.cols();
 

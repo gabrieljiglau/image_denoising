@@ -35,19 +35,18 @@ class Toolkit{
 
         IAlgorithm *algorithm;
 
-        void rgbChannel();
-
-    public:
-
-        Toolkit(std::string imagePath, unsigned int width = 0, unsigned int height = 0): imagePath(imagePath), width(width), height(height) {};
-
         int loadPng(std::string pngPath);
 
         int reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChannels, std::vector<unsigned char> &newImage, std::string newPath);
 
-        //std::vector<Eigen::MatrixXd> getChannels() {return this->channels;}
+    public:
+
+        Toolkit(std::string imagePath, unsigned int width = 0, unsigned int height = 0): imagePath(imagePath), width(width), height(height) {};
+          //std::vector<Eigen::MatrixXd> getChannels() {return this->channels;}
 
         void checkRank();
+
+        void initChannels();
 
         void setMode(std::string mode) {this->mode = mode;}
 

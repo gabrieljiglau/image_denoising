@@ -1,5 +1,7 @@
 #include "include/kernel_methods.hpp"
 #include "include/utils.hpp"
+#include "iostream"
+#include <cstdio>
 
 /**
  * @brief Prepares the gaussian kernel to be applied on a given channel
@@ -32,6 +34,11 @@ Eigen::MatrixXd GaussianBlur::kernel(int kernelSize, double stddev){
 Eigen::MatrixXd GaussianBlur::blur(Eigen::MatrixXd A, int kernelSize, double stddev){
 
     int padSize = kernelSize / 2;
+
+    if (kernelSize % 2 == 0){
+        kernelSize -= 1; // kernelSize must be odd
+    }
+
     Eigen::MatrixXd kernel = GaussianBlur::kernel(kernelSize, stddev);
     Eigen::MatrixXd paddedMatrix = padMatrixReflect(A, padSize);
 
@@ -54,12 +61,11 @@ Eigen::MatrixXd GaussianBlur::blur(Eigen::MatrixXd A, int kernelSize, double std
 }
 
 /// Applies the Gaussian Blur on all 3 channels from the image
-std::vector<std::vector<Eigen::MatrixXd>>  GaussianBlur::apply(){
+std::vector<std::vector<Eigen::MatrixXd>> GaussianBlur::apply(){
     
     std::vector<Eigen::MatrixXd> finalMatrices(3);
     
     for (int i = 0; i < finalMatrices.size(); i++){
-        // std::cout << "Now at index = " << i << std::endl;
         Eigen::MatrixXd newChannel = blur(channels[i], kernelSize, stddev);
         finalMatrices[i] = newChannel;
     }

@@ -2,9 +2,10 @@
 #include "include/base.hpp"
 #include "include/kernel_methods.hpp"
 #include "include/power_iteration.hpp"
-#include "libs/lodepng.h"
+#include "../libs/lodepng.h"
 #include <Eigen/src/QR/ColPivHouseholderQR.h>
 #include <iostream>
+#include <memory>
 #include <vector>
     
 
@@ -17,9 +18,6 @@ int Toolkit::loadPng(std::string pngPath){
 /// remove from the input the k values that do not comply to: k < rank(A)
 void Toolkit::checkRank(){
 
-    /// TODO: functia asta 'sparta' intr-o functie de initializare si in una de verificare a k-ului 
-    
-    rgbChannel();
     Eigen::ColPivHouseholderQR<Eigen::MatrixXd> qr(this->channels[0]);
     int rank = qr.rank();
 
@@ -33,8 +31,10 @@ void Toolkit::checkRank(){
 
 }
 
-
-void Toolkit::rgbChannel(){
+/**
+* @brief Deconstructs the image into 3(R/G/B) Eigen::MatrixXd matrices
+*/
+void Toolkit::initChannels(){
 
     loadPng(this->imagePath);
 
@@ -73,7 +73,6 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
     std::vector<Eigen::RowVectorXd> rowVectors;
 
     for (Eigen::MatrixXd channel: truncatedChannels){
-        std::cout << " channel.size() = " << channel.size() << std::endl;
         Eigen::RowVectorXd innerVector(channel.size());
 
         // Eigen stores matrices in column-major order
@@ -86,12 +85,7 @@ int Toolkit::reconstructImage(const std::vector<Eigen::MatrixXd> &truncatedChann
         rowVectors.push_back(innerVector);
     }
 
-    std::cout << "rowVectors.size() " << rowVectors.size() << std::endl;
-    std::cout << "aici ?" << std::endl;
-
     int size = rowVectors[0].size();
-    std::cout << rowVectors[0].size() << " , " << rowVectors[1].size() << " , " << rowVectors[2].size();
-
     for (int i = 0; i < size; i++){
 
         int r = (int) rowVectors[0](i);
@@ -131,22 +125,22 @@ std::vector<int> Toolkit::processPng(std::string inputPng, std::vector<std::stri
         return std::vector<int>();
     }
 
-    IAlgorithm *algorithm;
+    std::unique_ptr<IAlgorithm> algorithm;
     std::vector<int> errCodes;
     std::vector<std::vector<Eigen::MatrixXd>> truncatedChannels;
 
     if (this->mode == "blur"){
-        algorithm = new GaussianBlur(channels, kernelSize, stddev);
-    } else if (this->mode == "filter"){
-        algorithm = new MedianFilter(channels, windowSize);
+        algorithm = std::make_unique<GaussianBlur>(channels, kernelSize, stddev);
+    } else if (this->mode == "median_filter"){
+        algorithm = std::make_unique<MedianFilter>(channels, windowSize);
     } else if (this->mode == "svd"){
-        algorithm = new SVD(channels, kVals, maxIterations, epsilon);
+        algorithm = std::make_unique<SVD>(channels, kVals, maxIterations, epsilon);
     } else if (this->mode == "patch_svd"){
-        SVD patchSVD = SVD(channels, kVals ,maxIterations, epsilon);
+        SVD patchSVD = SVD(channels, kVals ,maxIterations, epsilon);    
         truncatedChannels = patchSVD.apply(patchSize, stride);
     }
 
-    if (truncatedChannels.empty()){ // it wasn't patch svd
+    if (algorithm){ // it wasn't patch svd
         truncatedChannels = algorithm->apply();
     }
     
@@ -154,9 +148,6 @@ std::vector<int> Toolkit::processPng(std::string inputPng, std::vector<std::stri
     for (int i = 0; i < newPaths.size(); i++){
         errCodes.push_back(reconstructImage(truncatedChannels[i], newImages[i], newPaths[i]));
     }
-    
-    delete algorithm;
-    algorithm = nullptr;
     
     return errCodes;
 }

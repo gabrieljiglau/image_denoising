@@ -1,13 +1,15 @@
-#include "../libs/CLI11.hpp"
+#include "../../libs/CLI11.hpp"
 #include "../include/toolkit.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Core/util/Constants.h>
 #include <vector>
 #include <string>
 #include <iostream>
+#include <filesystem>
 #include <fmt/core.h>
 #include <fmt/core.h>
 
+namespace fs = std::filesystem;
 
 int main(int argc, char *argv[]){
 
@@ -34,10 +36,8 @@ int main(int argc, char *argv[]){
 
     
     // Median Filter
-    int windowSize;
-
-    auto *filter = app.add_subcommand("filter", "Median Filter");
-    filter->add_option("--windowSize", kernelSize, "The size of the kernel")
+    auto *filter = app.add_subcommand("median_filter", "Median Filter");
+    filter->add_option("--kernelSize", kernelSize, "The size of the kernel")
         ->required()
         ->check(CLI::PositiveNumber);
 
@@ -77,7 +77,21 @@ int main(int argc, char *argv[]){
         
     CLI11_PARSE(app, argc, argv);
 
+    // validate the input
+    fs::path file = inputPng;
+    if (!fs::exists(file)){
+        std::cout << "Input file must be present on the disk !" << std::endl;
+        return 1;
+    }
+    if (file.extension() != ".png"){
+        std::cout << "Unsupported file type. Only PNGs allowed !" << std::endl;
+        return 2;
+    }
+
+    // de asemenea, sa validezi extensiile pt output
+
     Toolkit toolkit(inputPng);
+    toolkit.initChannels();
     
     if (*blur) {
         toolkit.setKernelSize(kernelSize);
@@ -87,8 +101,8 @@ int main(int argc, char *argv[]){
         std::cout << "Applying Gaussian Blur \n" << std::endl;
     
     } else if (*filter){
-        toolkit.setWindowSize(windowSize);
-        toolkit.setMode("filter");
+        toolkit.setWindowSize(kernelSize);
+        toolkit.setMode("median_filter");
         
         std::cout << "Applying Median Filter \n" << std::endl;
     
@@ -120,7 +134,5 @@ int main(int argc, char *argv[]){
     } 
 
     return 0;
-
-    /// TODO: de scris niste teste cu catch 2
 
 }

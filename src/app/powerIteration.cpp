@@ -18,8 +18,6 @@
  */
 std::vector<Eigen::MatrixXd> SVD::powerIteration(Eigen::MatrixXd A, std::vector<int> k, int maxIterations, double epsilon){
 
-    std::cout << "k.size() = " << k.size() << std::endl;
-
     std::sort(k.begin(), k.end()); // ensure that k's are in order
 
     int biggestK = k[k.size() - 1];
@@ -204,7 +202,6 @@ std::vector<std::vector<Eigen::MatrixXd>> SVD::apply(int patchSize, int stride){
 
     for (int i = 0; i < 3; i++){
         std::vector<Eigen::MatrixXd> currentReconstruction = applyPatches(channels[i], patchSize, stride, kVals, maxIterations, epsilon);
-        std::cout << "aici ?? " << std::endl;
         for (int j = 0; j < kVals.size(); j++){
             finalMatrices[j][i] = currentReconstruction[j];
         }
