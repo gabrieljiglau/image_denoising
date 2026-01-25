@@ -1,15 +1,14 @@
 #include "../../libs/CLI11.hpp"
 #include "../include/toolkit.hpp"
+#include "../include/utils.hpp"
 #include <Eigen/src/Core/Matrix.h>
 #include <Eigen/src/Core/util/Constants.h>
 #include <vector>
 #include <string>
 #include <iostream>
-#include <filesystem>
 #include <fmt/core.h>
 #include <fmt/core.h>
 
-namespace fs = std::filesystem;
 
 int main(int argc, char *argv[]){
 
@@ -77,18 +76,14 @@ int main(int argc, char *argv[]){
         
     CLI11_PARSE(app, argc, argv);
 
-    // validate the input
-    fs::path file = inputPng;
-    if (!fs::exists(file)){
-        std::cout << "Input file must be present on the disk !" << std::endl;
-        return 1;
-    }
-    if (file.extension() != ".png"){
-        std::cout << "Unsupported file type. Only PNGs allowed !" << std::endl;
-        return 2;
+    // validate input-output
+    bool checkExistence = true;
+    validateInput(inputPng, checkExistence); /*inputPng, checkExistence*/
+
+    for (std::string &path : outputPngs){
+        validateInput(path, !checkExistence);
     }
 
-    // de asemenea, sa validezi extensiile pt output
 
     Toolkit toolkit(inputPng);
     toolkit.initChannels();

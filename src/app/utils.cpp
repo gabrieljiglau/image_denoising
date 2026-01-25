@@ -1,13 +1,35 @@
 #include "include/utils.hpp"
 #include "../libs/lodepng.h"
-#include <Eigen/src/Core/Matrix.h>
 #include <random>
 #include <cmath>
 #include <iostream>
 #include <fmt/core.h>
 #include <vector>
 #include <string>
+#include <filesystem>
+#include <Eigen/src/Core/Matrix.h>
 #include <Eigen/Dense>
+
+namespace fs = std::filesystem;
+
+int validateInput(std::string inputPng, bool checkExistence){
+    
+    fs::path file = inputPng;
+
+    if (file.extension() != ".png"){
+        std::cout << "Unsupported file type. Only PNGs allowed !" << std::endl;
+        return 1;
+    }
+
+    if (checkExistence){
+        if (!fs::exists(file)){
+            std::cout << "Input file must be present on the disk !" << std::endl;
+            return 2;
+        }
+    }
+
+    return 0;
+}
 
 
 std::vector<Eigen::MatrixXd> zeroMatrix(const int rows, std::vector<int> cols){
@@ -74,7 +96,7 @@ float gaussianGenerator(int mean, int stdDev){
     float u1 = uniformDistribution(generator);
     float u2 = uniformDistribution(generator);
 
-    // Box-Muller generator fod Gaussian pdf
+    // Box-Muller generator for Gaussian pdf
     float z0 = std::sqrt(-2 * std::log(u1)) * std::cos(2 * PI * u2);
 
     return mean + stdDev * z0;
@@ -105,7 +127,7 @@ int addPixelNoise(int originalPixel, int mean, int stdDev){
 
 }
 
-void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<unsigned char> &newImage, 
+int generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<unsigned char> &newImage, 
                         std::string newPath, int height, int width, int mean, int stdDev){
 
     for (unsigned int col = 0; col < height; col++){
@@ -135,11 +157,13 @@ void generateNoisyImage(std::vector<unsigned char> originalImage, std::vector<un
     int error = lodepng::encode(newPath, newImage, width, height);
     if (error) {
         std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
+        return error;
     }
 
+    return 0;
 }
 
-void addSaltPepperNoise(std::vector<unsigned char> image, std::string savingPath, int height, int width, float threshold){
+int addSaltPepperNoise(std::vector<unsigned char> image, std::string savingPath, int height, int width, float threshold){
 
     std::vector<unsigned char> newImage;
 
@@ -165,13 +189,15 @@ void addSaltPepperNoise(std::vector<unsigned char> image, std::string savingPath
     int error = lodepng::encode(savingPath, newImage, width, height);
     if (error) {
         std::cerr << "Encoder error: " << error << lodepng_error_text(error) << std::endl;
+        return error;
     }
 
     std::cout << "Image with noise (salt and pepper) generated and saved to " << savingPath << std::endl;
+    return 0;
 }
 
 
-void addGaussianNoise(std::vector<unsigned char>image, int height, int width, int mean, std::vector<double> stdDevs, std::vector<std::string> savingPaths){
+int addGaussianNoise(std::vector<unsigned char>image, int height, int width, int mean, std::vector<double> stdDevs, std::vector<std::string> savingPaths){
 
     std::vector<std::vector<unsigned char>> newImages(savingPaths.size());
 
@@ -179,6 +205,8 @@ void addGaussianNoise(std::vector<unsigned char>image, int height, int width, in
         generateNoisyImage(image, newImages[i], savingPaths[i], height, width, mean, stdDevs[i]);
         std::cout << "Image with noise (from a gaussian PDF) generated and saved to " << savingPaths[i] << std::endl;
     }
+
+    return 0;
 }
 
 Eigen::MatrixXd padMatrixReflect(Eigen::MatrixXd A, int padSize) {

@@ -51,10 +51,14 @@ int main(int argc, char *argv[]){
             std::cout << "Only one image can be generated at once with salt and pepper noise ! \n";
             return 2;
         }
+
+        if (threshold > 0.5) {
+            std::cout << "We reccommend that threshold is inside [0, 0.5], otherwise the image is too messy ! \n";
+            return 3;
+        }
         
         addSaltPepperNoise(image, outputPngs[0], height, width, threshold);
     }
 
-    /// TODO: de scris niste teste cu catch 2
     return 0;
 }

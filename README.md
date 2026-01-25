@@ -15,9 +15,9 @@ Choose an odd window/kernel size (3 x 3, 5 x 5) around each pixel from the image
 ## Gaussian blur
 Choose an odd window/kernel size (3 x 3, 5 x 5), that contains elemenents from a gaussian pdf, then each component will be the sum of the multiplications between the original pixel and the elements from the kernel. Usually applied as a preprocessing step, in order to reduce detail/noise.
 
-<img src="images/honda.png" alt="before" width=400> original/before
+<img src="images/lena.png" alt="before" width=250> before
 
-<img src="images/blurred/blurred_stddev5.png" alt="after blur" width=400/> after 
+<img src="images/blurred/blur_kernel5_stddev4.png" alt="after blur" width=250/> after (kernel size = 5, stddev = 4)
 
 ## SVD
 In the singular value decomposition (SVD), a matrix A can be decomposed using 3 matrices, `A = U * Σ * Vᵀ`, where U and V are orthogonal, meaning `U * Uᵀ = I`, and Σ is a diagonal matrix, whose non-zero values are the eigenvalues of A.
@@ -55,13 +55,22 @@ If ran on the original input, it's esentially compression.
 
 ## Run the project
 
-#### prerequisites: Eigen installed (C++ library similar to numpy) 
+#### prerequisites: Eigen (C++ library for linear algebra), Catch2 (for unit testing)
 
 From the root of the project: 
 ``` 
 cmake --build build
-./build/image_denoising full/path/to/image mode kForSVD
-
-# mode = blur / filter / SVD
-# kForSVD = optional parameter, an integer used when reconstructing the image using SVD
 ```
+
+noise addition:
+```
+./build/add_noise --help           # get started
+./build/add_noise --input  /path/to/image.png --output /path/to/output.png gaussian_noise --mean -3 --stddev 30 # example for gaussian noise
+```
+
+access to algorithms:
+```
+./build/algorithm --help           # get started
+./build/algorithm --input /path/to/image.png --output /path/to/output.png blur --kernelSize 9 --stddev 20  # example for blur
+```
+
